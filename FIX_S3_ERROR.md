@@ -65,7 +65,7 @@ npm start
 
 ### Step 6: Test
 ```bash
-Invoke-WebRequest -Uri "http://localhost:3000/api/games"
+Invoke-WebRequest -Uri "http://85.209.95.229:3000/api/games"
 ```
 
 ## 🎯 Expected Result

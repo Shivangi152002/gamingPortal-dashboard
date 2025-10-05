@@ -23,7 +23,7 @@ Already configured! But you can change:
 **Frontend (.env in dashboard root):**
 Create this file:
 ```env
-VITE_API_BASE_URL=http://localhost:3000/api
+VITE_API_BASE_URL=http://85.209.95.229:3000/api
 ```
 
 ### Step 3: Start Everything!
@@ -105,7 +105,7 @@ GAME_DATA_PATH=../../gamingPortal/public/game-data.json
 
 ### Frontend (.env)
 ```env
-VITE_API_BASE_URL=http://localhost:3000/api
+VITE_API_BASE_URL=http://85.209.95.229:3000/api
 ```
 
 ---
@@ -135,15 +135,15 @@ taskkill /PID <number> /F
 Test if backend works:
 ```bash
 # Health check
-curl http://localhost:3000/api/health
+curl http://85.209.95.229:3000/api/health
 
 # Login
-curl -X POST http://localhost:3000/api/auth/login ^
+curl -X POST http://85.209.95.229:3000/api/auth/login ^
   -H "Content-Type: application/json" ^
   -d "{\"username\":\"admin\",\"password\":\"admin123\"}"
 
 # Get games
-curl http://localhost:3000/api/games
+curl http://85.209.95.229:3000/api/games
 ```
 
 ---

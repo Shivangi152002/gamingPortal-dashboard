@@ -40,7 +40,7 @@ import { useNavigate } from 'react-router-dom'
 import { useSnackbar } from 'notistack'
 import axios from 'axios'
 
-const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:3000/api'
+const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://85.209.95.229:3000/api'
 
 // Helper function to get full image URL from S3 path
 const getImageUrl = (imagePath, cloudFrontUrl) => {
@@ -454,7 +454,18 @@ const GameLibrary = () => {
               
               if (response.data.success) {
                 const gamesData = response.data.data.games || []
-                setGames(gamesData)
+                // Sort games by creation date (newest first) - assuming games have created_at or similar field
+                // If no date field, we'll sort by ID in descending order (assuming higher IDs are newer)
+                const sortedGames = gamesData.sort((a, b) => {
+                  // Try to sort by created_at if available, otherwise by id
+                  if (a.created_at && b.created_at) {
+                    return new Date(b.created_at) - new Date(a.created_at)
+                  } else if (a.id && b.id) {
+                    return parseInt(b.id) - parseInt(a.id)
+                  }
+                  return 0
+                })
+                setGames(sortedGames)
                 
                 // Try to get CloudFront URL from environment or API
                 const cloudFront = import.meta.env.VITE_CLOUDFRONT_URL || 'https://d1xtpep1y73br3.cloudfront.net'

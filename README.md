@@ -50,7 +50,7 @@ CLOUDFRONT_URL=https://your-cloudfront.net
 Create `.env` in dashboard root:
 
 ```env
-VITE_API_BASE_URL=http://localhost:3000/api
+VITE_API_BASE_URL=http://85.209.95.229:3000/api
 ```
 
 ### 4. Start Servers
@@ -168,7 +168,7 @@ MAX_FILE_SIZE=52428800
 ### Frontend Environment (`.env`)
 
 ```env
-VITE_API_BASE_URL=http://localhost:3000/api
+VITE_API_BASE_URL=http://85.209.95.229:3000/api
 ```
 
 ---

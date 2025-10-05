@@ -97,7 +97,7 @@ CLOUDFRONT_URL=https://your-cloudfront-domain.cloudfront.net
 Create in dashboard root:
 
 ```env
-VITE_API_BASE_URL=http://localhost:3000/api
+VITE_API_BASE_URL=http://85.209.95.229:3000/api
 ```
 
 ---

@@ -222,7 +222,7 @@ Default TTL: 86400 (24 hours)
 ### Dashboard Frontend (Port 5173)
 ```javascript
 // API Configuration
-const API_BASE_URL = 'http://localhost:3000/api'
+const API_BASE_URL = 'http://85.209.95.229:3000/api'
 
 // Example: Fetch Games
 const fetchGames = async () => {
@@ -386,7 +386,7 @@ notepad .env
 **Solution**:
 ```bash
 # Test API directly
-Invoke-WebRequest -Uri "http://localhost:3000/api/games"
+Invoke-WebRequest -Uri "http://85.209.95.229:3000/api/games"
 
 # Check server logs
 npm start
@@ -419,7 +419,7 @@ fetch('/api/games', {
 netstat -ano | findstr :3000
 
 # Test health endpoint
-Invoke-WebRequest -Uri "http://localhost:3000/api/health"
+Invoke-WebRequest -Uri "http://85.209.95.229:3000/api/health"
 
 # Check environment variables
 Get-Content .env

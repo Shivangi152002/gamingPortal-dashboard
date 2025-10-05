@@ -19,7 +19,7 @@ import {
 import { Visibility as ViewIcon, Refresh as RefreshIcon } from '@mui/icons-material'
 import axios from 'axios'
 
-const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:3000/api'
+const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://85.209.95.229:3000/api'
 
 const RecentGames = () => {
   const [games, setGames] = useState([])
@@ -35,8 +35,18 @@ const RecentGames = () => {
       
       if (response.data.success) {
         const gamesData = response.data.data.games || []
-        // Get the 5 most recent games (assuming they're ordered by creation or we'll take first 5)
-        const recentGames = gamesData.slice(0, 5)
+        // Sort games by creation date (newest first) and get the 5 most recent
+        const sortedGames = gamesData.sort((a, b) => {
+          // Try to sort by created_at if available, otherwise by id
+          if (a.created_at && b.created_at) {
+            return new Date(b.created_at) - new Date(a.created_at)
+          } else if (a.id && b.id) {
+            return parseInt(b.id) - parseInt(a.id)
+          }
+          return 0
+        })
+        // Get the 5 most recent games (newest first)
+        const recentGames = sortedGames.slice(0, 5)
         setGames(recentGames)
       }
     } catch (error) {
@@ -85,6 +95,7 @@ const RecentGames = () => {
               <TableCell sx={{ fontWeight: 600 }}>Game</TableCell>
               <TableCell sx={{ fontWeight: 600 }}>Category</TableCell>
               <TableCell sx={{ fontWeight: 600 }}>Size</TableCell>
+              <TableCell sx={{ fontWeight: 600 }}>Uploaded</TableCell>
               <TableCell sx={{ fontWeight: 600 }}>Status</TableCell>
               <TableCell sx={{ fontWeight: 600 }}>Actions</TableCell>
             </TableRow>
@@ -129,6 +140,14 @@ const RecentGames = () => {
                   <Chip label={game.size} size="small" variant="outlined" color="secondary" />
                 </TableCell>
                 <TableCell>
+                  <Typography variant="caption" color="text.secondary">
+                    {game.created_at 
+                      ? new Date(game.created_at).toLocaleDateString()
+                      : 'Recently'
+                    }
+                  </Typography>
+                </TableCell>
+                <TableCell>
                   <Chip
                     label="Published"
                     size="small"
@@ -151,7 +170,7 @@ const RecentGames = () => {
               </TableRow>
             )) : (
               <TableRow>
-                <TableCell colSpan={5} align="center">
+                <TableCell colSpan={6} align="center">
                   <Typography variant="body2" color="text.secondary">
                     No games found
                   </Typography>

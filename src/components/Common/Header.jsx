@@ -10,6 +10,7 @@ import {
   Menu,
   MenuItem,
   Divider,
+  Chip,
 } from '@mui/material'
 import {
   Menu as MenuIcon,
@@ -19,8 +20,14 @@ import {
   Logout as LogoutIcon,
 } from '@mui/icons-material'
 import SportsEsportsIcon from '@mui/icons-material/SportsEsports'
+import { useAuth } from '../../context/AuthContext'
+import { useNavigate } from 'react-router-dom'
+import { useSnackbar } from 'notistack'
 
 const Header = ({ onMenuClick }) => {
+  const { user, logout, isAuthenticated } = useAuth()
+  const navigate = useNavigate()
+  const { enqueueSnackbar } = useSnackbar()
   const [anchorEl, setAnchorEl] = React.useState(null)
   const [notifAnchor, setNotifAnchor] = React.useState(null)
 
@@ -35,6 +42,33 @@ const Header = ({ onMenuClick }) => {
   const handleMenuClose = () => {
     setAnchorEl(null)
     setNotifAnchor(null)
+  }
+
+  const handleLogout = async () => {
+    try {
+      await logout()
+      enqueueSnackbar('Logged out successfully', { variant: 'success' })
+      navigate('/login')
+    } catch (error) {
+      enqueueSnackbar('Logout failed', { variant: 'error' })
+    }
+    handleMenuClose()
+  }
+
+  // Get user display name (username or email)
+  const getUserDisplayName = () => {
+    if (!user) return 'A'
+    // Try different possible username fields
+    return user.username || user.name || user.email?.split('@')[0] || user.email || 'U'
+  }
+
+  // Get user full info for display
+  const getUserInfo = () => {
+    if (!user) return { name: 'Anonymous', email: 'Not logged in' }
+    return {
+      name: user.username || user.name || user.email?.split('@')[0] || 'User',
+      email: user.email || 'No email'
+    }
   }
 
   return (
@@ -63,19 +97,18 @@ const Header = ({ onMenuClick }) => {
         </Typography>
 
         <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-          <IconButton color="inherit" onClick={handleNotifMenuOpen}>
-            <Badge badgeContent={4} color="error">
-              <NotificationsIcon />
-            </Badge>
-          </IconButton>
-
-          <IconButton color="inherit">
-            <SettingsIcon />
-          </IconButton>
+          {/* User Info Display */}
+          {isAuthenticated && (
+            <Box sx={{ display: 'flex', alignItems: 'center', mr: 1 }}>
+              <Typography variant="body2" sx={{ color: 'white', mr: 1 }}>
+                Welcome, {getUserInfo().name}
+              </Typography>
+            </Box>
+          )}
 
           <IconButton onClick={handleProfileMenuOpen} sx={{ ml: 1 }}>
             <Avatar sx={{ width: 32, height: 32, bgcolor: 'secondary.main' }}>
-              A
+              {getUserDisplayName().charAt(0).toUpperCase()}
             </Avatar>
           </IconButton>
         </Box>
@@ -85,18 +118,48 @@ const Header = ({ onMenuClick }) => {
           anchorEl={anchorEl}
           open={Boolean(anchorEl)}
           onClose={handleMenuClose}
-          onClick={handleMenuClose}
           transformOrigin={{ horizontal: 'right', vertical: 'top' }}
           anchorOrigin={{ horizontal: 'right', vertical: 'bottom' }}
+          PaperProps={{
+            sx: { width: 280 }
+          }}
         >
-          <MenuItem>
+          {/* User Info Header */}
+          <Box sx={{ p: 2, borderBottom: '1px solid', borderColor: 'divider' }}>
+            <Box sx={{ display: 'flex', alignItems: 'center', mb: 1 }}>
+              <Avatar sx={{ width: 40, height: 40, bgcolor: 'primary.main', mr: 2 }}>
+                {getUserDisplayName().charAt(0).toUpperCase()}
+              </Avatar>
+              <Box>
+                <Typography variant="subtitle1" sx={{ fontWeight: 600 }}>
+                  {getUserInfo().name}
+                </Typography>
+                <Typography variant="body2" color="text.secondary">
+                  {getUserInfo().email}
+                </Typography>
+              </Box>
+            </Box>
+            {user?.role && (
+              <Chip 
+                label={user.role.toUpperCase()} 
+                size="small" 
+                color={user.role === 'root' ? 'error' : 'primary'}
+                sx={{ fontSize: '0.7rem' }}
+              />
+            )}
+          </Box>
+
+          {/* Menu Items */}
+          {/* <MenuItem onClick={handleMenuClose}>
             <AccountCircleIcon sx={{ mr: 2 }} /> Profile
-          </MenuItem>
-          <MenuItem>
+          </MenuItem> */}
+          {/* <MenuItem onClick={handleMenuClose}>
             <SettingsIcon sx={{ mr: 2 }} /> Settings
           </MenuItem>
+           */}
           <Divider />
-          <MenuItem>
+          
+          <MenuItem onClick={handleLogout} sx={{ color: 'error.main' }}>
             <LogoutIcon sx={{ mr: 2 }} /> Logout
           </MenuItem>
         </Menu>

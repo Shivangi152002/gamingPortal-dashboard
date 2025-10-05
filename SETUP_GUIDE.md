@@ -52,7 +52,7 @@ npm install
 Create `.env` file in the dashboard root:
 
 ```env
-VITE_API_BASE_URL=http://localhost:3000/api
+VITE_API_BASE_URL=http://85.209.95.229:3000/api
 ```
 
 ### Step 5: Start Backend Server
@@ -218,7 +218,7 @@ PORT=3001
 ### Frontend can't connect to backend
 - Verify `VITE_API_BASE_URL` in frontend `.env`
 - Check backend is running on correct port
-- Try: `http://localhost:3000/api/health`
+- Try: `http://85.209.95.229:3000/api/health`
 
 ## 🎯 API Endpoints Reference
 

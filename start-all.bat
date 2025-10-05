@@ -18,7 +18,7 @@ echo ========================================
 echo Both servers are starting!
 echo ========================================
 echo.
-echo Backend:  http://localhost:3000
+echo Backend:  http://85.209.95.229:3000
 echo Frontend: http://localhost:5173
 echo.
 echo Login credentials:

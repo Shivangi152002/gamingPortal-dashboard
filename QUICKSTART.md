@@ -24,7 +24,7 @@ Create a `.env` file in the root directory:
 
 ```env
 # Minimal configuration to get started
-VITE_API_BASE_URL=http://localhost:3000/api
+VITE_API_BASE_URL=http://85.209.95.229:3000/api
 VITE_AWS_REGION=us-east-1
 ```
 
@@ -36,7 +36,7 @@ For full AWS integration, see `.env.example` for all configuration options.
 npm run dev
 ```
 
-Your dashboard will open at: **http://localhost:3000**
+Your dashboard will open at: **http://85.209.95.229:3000**
 
 ## 🎯 What You'll See
 

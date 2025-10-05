@@ -20,9 +20,9 @@ const AdminDashboard = () => {
         </Grid>
 
         {/* Recent Games and System Status */}
-        <Grid item xs={12} md={12}>
+        {/* <Grid item xs={12} md={12}>
           <RecentGames />
-        </Grid>
+        </Grid> */}
         {/* <Grid item xs={12} md={4}>
           <SystemStatus />
         </Grid> */}
