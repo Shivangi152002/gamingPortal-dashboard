@@ -17,9 +17,8 @@ import {
   IconButton,
 } from '@mui/material'
 import { Visibility as ViewIcon, Refresh as RefreshIcon } from '@mui/icons-material'
-import axios from 'axios'
-
-const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://85.209.95.229:3000/api'
+import axios from '../../utils/axios'
+import { config } from '../../config'
 
 const RecentGames = () => {
   const [games, setGames] = useState([])
@@ -31,7 +30,9 @@ const RecentGames = () => {
       setLoading(true)
       setError(null)
       
-      const response = await axios.get(`${API_BASE_URL}/games`)
+      const response = await axios.get(config.api.getFullUrl(config.api.endpoints.games.list), {
+        timeout: config.api.timeout
+      })
       
       if (response.data.success) {
         const gamesData = response.data.data.games || []

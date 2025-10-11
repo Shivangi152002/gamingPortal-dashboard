@@ -32,6 +32,8 @@ import { useDropzone } from 'react-dropzone'
 import ReactQuill from 'react-quill'
 import 'react-quill/dist/quill.snow.css'
 import { useSnackbar } from 'notistack'
+import axios from '../../utils/axios'
+import { config } from '../../config'
 
 const categories = ['Action', 'Adventure', 'Puzzle', 'Racing', 'Sports', 'Strategy', 'RPG', 'Card', 'Arcade']
 const sizes = ['small', 'medium', 'large']
@@ -225,8 +227,6 @@ const GameUpload = () => {
     setUploadModalOpen(true)
 
     try {
-      const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://85.209.95.229:3000/api'
-      
       // Step 1: Upload files
       const uploadFormData = new FormData()
       if (files.thumbnail) uploadFormData.append('thumbnail', files.thumbnail)
@@ -235,7 +235,7 @@ const GameUpload = () => {
       if (files.htmlZip) uploadFormData.append('htmlZip', files.htmlZip)
 
       setUploadProgress(30)
-      const uploadResponse = await fetch(`${API_BASE_URL}/upload/files`, {
+      const uploadResponse = await fetch(config.api.getFullUrl(config.api.endpoints.upload.files), {
         method: 'POST',
         credentials: 'include', // Send session cookie
         body: uploadFormData
@@ -273,7 +273,7 @@ const GameUpload = () => {
       }
 
       setUploadProgress(80)
-      const gameResponse = await fetch(`${API_BASE_URL}/games`, {
+      const gameResponse = await fetch(config.api.getFullUrl(config.api.endpoints.games.create), {
         method: 'POST',
         credentials: 'include', // Send session cookie
         headers: {

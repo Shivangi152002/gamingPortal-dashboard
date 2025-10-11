@@ -2,6 +2,33 @@
 
 Complete admin dashboard for managing games with AWS S3 integration, session-based authentication, and user management.
 
+## 🚨 **IMPORTANT: Dashboard Not Loading?**
+
+**📖 Read the comprehensive guides:**
+- ⚡ **[QUICK_FIX.md](./QUICK_FIX.md)** - Fix dashboard in 2 minutes
+- 🔄 **[LOCAL_VS_DEPLOY_GUIDE.md](./LOCAL_VS_DEPLOY_GUIDE.md)** - Local vs Deploy configuration
+- 📋 **[QUICK_REFERENCE_CARD.md](./QUICK_REFERENCE_CARD.md)** - Print & keep handy!
+- 🔧 **[TROUBLESHOOTING.md](./TROUBLESHOOTING.md)** - Common issues & solutions
+- 📖 **[CONFIGURATION_GUIDE.md](./CONFIGURATION_GUIDE.md)** - Complete setup guide (50+ pages)
+- 🎓 **[DETAILED_API_EXPLANATION.md](./DETAILED_API_EXPLANATION.md)** - How API works (Hindi/English)
+- 🎨 **[VISUAL_GUIDE.md](./VISUAL_GUIDE.md)** - Diagrams & visual explanations
+- 📝 **[README_HINDI.md](./README_HINDI.md)** - Pure Hindi documentation
+- ⚙️ **[ENV_TEMPLATE.md](./ENV_TEMPLATE.md)** - Environment variables template
+- 📁 **[PROJECT_STRUCTURE.md](./PROJECT_STRUCTURE.md)** - File locations & structure
+
+## 🎯 **NEW: Centralized Configuration System**
+
+- 🔧 **[CONFIGURATION_SETUP.md](./CONFIGURATION_SETUP.md)** - Complete configuration guide
+- 🚀 **[SETUP_INSTRUCTIONS.md](./SETUP_INSTRUCTIONS.md)** - 5-minute quick setup
+- 🔄 **[MIGRATION_GUIDE.md](./MIGRATION_GUIDE.md)** - Migrate existing code
+- 📄 **`src/config/index.js`** - Single source of truth for all URLs
+
+**✨ NEW FEATURE:** All URLs now managed in ONE place! Automatically switches between development and production.
+
+**⚠️ Most Common Issue:** Backend server is not running. See **QUICK_FIX.md** for immediate solution.
+
+---
+
 ## ✨ Features
 
 - ✅ **Session Authentication** - Simple, secure session-based login
@@ -11,6 +38,9 @@ Complete admin dashboard for managing games with AWS S3 integration, session-bas
 - ✅ **Dynamic game-data.json** - Fetched and updated in S3
 - ✅ **File Upload** - GIFs, logos, thumbnails, HTML/ZIP games
 - ✅ **CloudFront Ready** - Optimized for CDN delivery
+- ✅ **Newest First Sorting** - Latest games shown first in library and dashboard
+- ✅ **Upload Tracking** - Recent uploads displayed on dashboard
+- ✅ **User Profile** - Shows username/email in header with logout functionality
 
 ---
 

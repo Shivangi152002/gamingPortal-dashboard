@@ -6,9 +6,8 @@ import {
   TrendingUp as TrendingIcon,
   Schedule as ScheduleIcon 
 } from '@mui/icons-material'
-import axios from 'axios'
-
-const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://85.209.95.229:3000/api'
+import axios from '../../utils/axios'
+import { config } from '../../config'
 
 const DashboardHome = () => {
   const [stats, setStats] = useState({
@@ -19,7 +18,9 @@ const DashboardHome = () => {
 
   const fetchDashboardStats = async () => {
     try {
-      const response = await axios.get(`${API_BASE_URL}/games`)
+      const response = await axios.get(config.api.getFullUrl(config.api.endpoints.games.list), {
+        timeout: config.api.timeout
+      })
       
       if (response.data.success) {
         const games = response.data.data.games || []

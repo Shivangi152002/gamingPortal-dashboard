@@ -1,6 +1,5 @@
-import axios from 'axios'
-
-const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://85.209.95.229:3000/api'
+import axios from '../utils/axios'
+import { config } from '../config'
 
 // AWS S3 and CloudFront Operations
 export const awsService = {
@@ -9,8 +8,9 @@ export const awsService = {
     // Get bucket status
     getBucketStatus: async (bucketName) => {
       try {
-        const response = await axios.get(`${API_BASE_URL}/aws/s3/status`, {
+        const response = await axios.get(`${config.api.baseUrl}/aws/s3/status`, {
           params: { bucket: bucketName },
+          timeout: config.api.timeout
         })
         return response.data
       } catch (error) {
@@ -22,8 +22,9 @@ export const awsService = {
     // List objects in bucket
     listObjects: async (bucketName, prefix = '') => {
       try {
-        const response = await axios.get(`${API_BASE_URL}/aws/s3/list`, {
+        const response = await axios.get(`${config.api.baseUrl}/aws/s3/list`, {
           params: { bucket: bucketName, prefix },
+          timeout: config.api.timeout
         })
         return response.data
       } catch (error) {
@@ -39,8 +40,10 @@ export const awsService = {
         formData.append('file', file)
         formData.append('path', path)
 
-        const response = await axios.post(`${API_BASE_URL}/aws/s3/upload`, formData, {
+        const response = await axios.post(`${config.api.baseUrl}/aws/s3/upload`, formData, {
+          withCredentials: true,
           headers: { 'Content-Type': 'multipart/form-data' },
+          timeout: 60000, // 60 seconds for uploads
           onUploadProgress: (progressEvent) => {
             const percentCompleted = Math.round((progressEvent.loaded * 100) / progressEvent.total)
             if (onProgress) onProgress(percentCompleted)
@@ -57,8 +60,10 @@ export const awsService = {
     // Delete from S3
     deleteFromS3: async (bucketName, key) => {
       try {
-        const response = await axios.delete(`${API_BASE_URL}/aws/s3/delete`, {
+        const response = await axios.delete(`${config.api.baseUrl}/aws/s3/delete`, {
+          withCredentials: true,
           data: { bucket: bucketName, key },
+          timeout: config.api.timeout
         })
         return response.data
       } catch (error) {
@@ -70,7 +75,9 @@ export const awsService = {
     // Get storage analytics
     getStorageAnalytics: async () => {
       try {
-        const response = await axios.get(`${API_BASE_URL}/aws/s3/analytics`)
+        const response = await axios.get(`${config.api.baseUrl}/aws/s3/analytics`, {
+          timeout: config.api.timeout
+        })
         return response.data
       } catch (error) {
         console.error('Error fetching storage analytics:', error)
@@ -84,8 +91,9 @@ export const awsService = {
     // Get distribution statistics
     getStats: async (distributionId) => {
       try {
-        const response = await axios.get(`${API_BASE_URL}/aws/cloudfront/stats`, {
+        const response = await axios.get(`${config.api.baseUrl}/aws/cloudfront/stats`, {
           params: { distributionId },
+          timeout: config.api.timeout
         })
         return response.data
       } catch (error) {
@@ -97,9 +105,12 @@ export const awsService = {
     // Invalidate cache
     invalidateCache: async (distributionId, paths) => {
       try {
-        const response = await axios.post(`${API_BASE_URL}/aws/cloudfront/invalidate`, {
+        const response = await axios.post(`${config.api.baseUrl}/aws/cloudfront/invalidate`, {
           distributionId,
           paths: Array.isArray(paths) ? paths : [paths],
+        }, {
+          withCredentials: true,
+          timeout: config.api.timeout
         })
         return response.data
       } catch (error) {
@@ -112,9 +123,10 @@ export const awsService = {
     getInvalidationStatus: async (distributionId, invalidationId) => {
       try {
         const response = await axios.get(
-          `${API_BASE_URL}/aws/cloudfront/invalidation/${invalidationId}`,
+          `${config.api.baseUrl}/aws/cloudfront/invalidation/${invalidationId}`,
           {
             params: { distributionId },
+            timeout: config.api.timeout
           }
         )
         return response.data
@@ -127,8 +139,9 @@ export const awsService = {
     // Get performance metrics
     getPerformanceMetrics: async (distributionId, timeRange = '24h') => {
       try {
-        const response = await axios.get(`${API_BASE_URL}/aws/cloudfront/metrics`, {
+        const response = await axios.get(`${config.api.baseUrl}/aws/cloudfront/metrics`, {
           params: { distributionId, timeRange },
+          timeout: config.api.timeout
         })
         return response.data
       } catch (error) {

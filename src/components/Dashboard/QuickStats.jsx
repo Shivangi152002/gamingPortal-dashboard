@@ -6,9 +6,8 @@ import {
   TrendingUp as TrendingIcon,
   People as PeopleIcon,
 } from '@mui/icons-material'
-import axios from 'axios'
-
-const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://85.209.95.229:3000/api'
+import axios from '../../utils/axios'
+import { config } from '../../config'
 
 const StatCard = ({ title, value, subtitle, icon, color }) => (
   <Paper
@@ -64,7 +63,9 @@ const QuickStats = () => {
         setLoading(true)
         
         // Fetch games data
-        const gamesResponse = await axios.get(`${API_BASE_URL}/games`)
+        const gamesResponse = await axios.get(config.api.getFullUrl(config.api.endpoints.games.list), {
+          timeout: config.api.timeout
+        })
         if (gamesResponse.data.success) {
           const games = gamesResponse.data.data.games || []
           setGameCount(games.length)
@@ -85,7 +86,9 @@ const QuickStats = () => {
         }
         
         // Test API status
-        const healthResponse = await axios.get(`${API_BASE_URL}/health`)
+        const healthResponse = await axios.get(`${config.api.baseUrl}/health`, {
+          timeout: config.api.timeout
+        })
         if (healthResponse.data.status === 'OK') {
           setApiStatus('Online')
         }

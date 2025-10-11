@@ -44,9 +44,8 @@ import ReactQuill from 'react-quill'
 import 'react-quill/dist/quill.snow.css'
 import { useSnackbar } from 'notistack'
 import { useDropzone } from 'react-dropzone'
-import axios from 'axios'
-
-const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://85.209.95.229:3000/api'
+import axios from '../../utils/axios'
+import { config } from '../../config'
 
 const categories = ['Action', 'Adventure', 'Puzzle', 'Racing', 'Sports', 'Strategy', 'RPG', 'Card', 'Arcade', 'Board', 'Casino', 'Educational', 'Music', 'Simulation', 'Trivia', 'Word']
 const sizes = ['small', 'medium', 'large']
@@ -148,7 +147,9 @@ const GameEditor = () => {
       setLoading(true)
       setError(null)
       
-      const response = await axios.get(`${API_BASE_URL}/games/${gameId}`)
+      const response = await axios.get(config.api.getFullUrl(config.api.endpoints.games.single(gameId)), {
+        timeout: config.api.timeout
+      })
       
       if (response.data.success) {
         const game = response.data.data
@@ -161,9 +162,8 @@ const GameEditor = () => {
           play_url: game.play_url || '',
         })
         
-        // Set CloudFront URL
-        const cloudFront = import.meta.env.VITE_CLOUDFRONT_URL || 'https://d1xtpep1y73br3.cloudfront.net'
-        setCloudFrontUrl(cloudFront)
+        // Set CloudFront URL from centralized config
+        setCloudFrontUrl(config.aws.cloudFrontUrl)
         
         console.log('🎮 Loaded game for editing:', game)
       }
@@ -201,8 +201,9 @@ const GameEditor = () => {
       console.log('Saving game data:', updateData)
       console.log('User authenticated:', isAuthenticated, 'User:', user)
       
-      const response = await axios.put(`${API_BASE_URL}/games/${gameId}`, updateData, {
+      const response = await axios.put(config.api.getFullUrl(config.api.endpoints.games.update(gameId)), updateData, {
         withCredentials: true,
+        timeout: config.api.timeout,
         headers: {
           'Content-Type': 'application/json'
         }
@@ -255,8 +256,9 @@ const GameEditor = () => {
   const handleDelete = async () => {
     if (window.confirm('Are you sure you want to delete this game? This action cannot be undone.')) {
       try {
-        const response = await axios.delete(`${API_BASE_URL}/games/${gameId}`, {
-          withCredentials: true
+        const response = await axios.delete(config.api.getFullUrl(config.api.endpoints.games.delete(gameId)), {
+          withCredentials: true,
+          timeout: config.api.timeout
         })
         
         console.log('Delete response:', response.data)
@@ -315,8 +317,9 @@ const GameEditor = () => {
       })
 
       setUploadProgress(30)
-      const uploadResponse = await axios.post(`${API_BASE_URL}/upload/files`, uploadFormData, {
+      const uploadResponse = await axios.post(config.api.getFullUrl(config.api.endpoints.upload.files), uploadFormData, {
         withCredentials: true,
+        timeout: 60000, // 60 seconds for file uploads
         headers: {
           'Content-Type': 'multipart/form-data'
         }
@@ -356,8 +359,9 @@ const GameEditor = () => {
       }
 
       setUploadProgress(80)
-      const gameResponse = await axios.put(`${API_BASE_URL}/games/${gameId}`, updateData, {
+      const gameResponse = await axios.put(config.api.getFullUrl(config.api.endpoints.games.update(gameId)), updateData, {
         withCredentials: true,
+        timeout: config.api.timeout,
         headers: {
           'Content-Type': 'application/json'
         }
@@ -403,7 +407,7 @@ const GameEditor = () => {
 
   // Helper function to get full image URL from S3 path
   const getImageUrl = (imagePath, cloudFrontUrl) => {
-    if (!imagePath) return 'https://via.placeholder.com/300x200/cccccc/666666?text=No+Image'
+    if (!imagePath) return 'data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMzAwIiBoZWlnaHQ9IjIwMCIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj4KICA8cmVjdCB3aWR0aD0iMTAwJSIgaGVpZ2h0PSIxMDAlIiBmaWxsPSIjY2NjY2NjIi8+CiAgPHRleHQgeD0iNTAlIiB5PSI1MCUiIGZvbnQtZmFtaWx5PSJBcmlhbCIgZm9udC1zaXplPSIxNiIgZmlsbD0iIzY2NjY2NiIgdGV4dC1hbmNob3I9Im1pZGRsZSIgZHk9Ii4zZW0iPk5vIEltYWdlPC90ZXh0Pgo8L3N2Zz4K'
     
     // If it's already a full URL, return as is
     if (imagePath.startsWith('http')) return imagePath

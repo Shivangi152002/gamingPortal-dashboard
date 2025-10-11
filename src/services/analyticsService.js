@@ -1,13 +1,13 @@
-import axios from 'axios'
-
-const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://85.209.95.229:3000/api'
+import axios from '../utils/axios'
+import { config } from '../config'
 
 // Analytics and Tracking Operations
 export const analyticsService = {
   // Get game performance data
   getGameAnalytics: async (gameId, timeRange = '30d') => {
     try {
-      const response = await axios.get(`${API_BASE_URL}/analytics/games/${gameId}`, {
+      const response = await axios.get(`${config.api.baseUrl}/analytics/games/${gameId}`, {
+        timeout: config.api.timeout,
         params: { timeRange },
       })
       return response.data
@@ -20,7 +20,8 @@ export const analyticsService = {
   // Get user engagement data
   getUserAnalytics: async (timeRange = '30d') => {
     try {
-      const response = await axios.get(`${API_BASE_URL}/analytics/users`, {
+      const response = await axios.get(`${config.api.baseUrl}/analytics/users`, {
+        timeout: config.api.timeout,
         params: { timeRange },
       })
       return response.data
@@ -33,7 +34,8 @@ export const analyticsService = {
   // Get traffic analytics
   getTrafficAnalytics: async (timeRange = '30d') => {
     try {
-      const response = await axios.get(`${API_BASE_URL}/analytics/traffic`, {
+      const response = await axios.get(`${config.api.baseUrl}/analytics/traffic`, {
+        timeout: config.api.timeout,
         params: { timeRange },
       })
       return response.data
@@ -46,7 +48,10 @@ export const analyticsService = {
   // Track event
   trackEvent: async (eventData) => {
     try {
-      const response = await axios.post(`${API_BASE_URL}/analytics/event`, eventData)
+      const response = await axios.post(`${config.api.baseUrl}/analytics/event`, eventData, {
+        withCredentials: true,
+        timeout: config.api.timeout
+      })
       return response.data
     } catch (error) {
       console.error('Error tracking event:', error)
@@ -57,7 +62,9 @@ export const analyticsService = {
   // Get dashboard summary
   getDashboardSummary: async () => {
     try {
-      const response = await axios.get(`${API_BASE_URL}/analytics/dashboard`)
+      const response = await axios.get(`${config.api.baseUrl}/analytics/dashboard`, {
+        timeout: config.api.timeout
+      })
       return response.data
     } catch (error) {
       console.error('Error fetching dashboard summary:', error)
@@ -68,7 +75,8 @@ export const analyticsService = {
   // Get top performing games
   getTopGames: async (limit = 10, timeRange = '30d') => {
     try {
-      const response = await axios.get(`${API_BASE_URL}/analytics/top-games`, {
+      const response = await axios.get(`${config.api.baseUrl}/analytics/top-games`, {
+        timeout: config.api.timeout,
         params: { limit, timeRange },
       })
       return response.data
@@ -81,7 +89,8 @@ export const analyticsService = {
   // Get device breakdown
   getDeviceBreakdown: async (timeRange = '30d') => {
     try {
-      const response = await axios.get(`${API_BASE_URL}/analytics/devices`, {
+      const response = await axios.get(`${config.api.baseUrl}/analytics/devices`, {
+        timeout: config.api.timeout,
         params: { timeRange },
       })
       return response.data

@@ -1,13 +1,15 @@
-import axios from 'axios'
-
-const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://85.209.95.229:3000/api'
+import axios from '../utils/axios'
+import { config } from '../config'
 
 // Game CRUD Operations
 export const gameService = {
   // Get all games
   getAllGames: async (filters = {}) => {
     try {
-      const response = await axios.get(`${API_BASE_URL}/games`, { params: filters })
+      const response = await axios.get(config.api.getFullUrl(config.api.endpoints.games.list), { 
+        params: filters,
+        timeout: config.api.timeout
+      })
       return response.data
     } catch (error) {
       console.error('Error fetching games:', error)
@@ -18,7 +20,9 @@ export const gameService = {
   // Get single game by ID
   getGameById: async (gameId) => {
     try {
-      const response = await axios.get(`${API_BASE_URL}/games/${gameId}`)
+      const response = await axios.get(config.api.getFullUrl(config.api.endpoints.games.single(gameId)), {
+        timeout: config.api.timeout
+      })
       return response.data
     } catch (error) {
       console.error('Error fetching game:', error)
@@ -46,8 +50,10 @@ export const gameService = {
       if (files.icon) formData.append('icon', files.icon)
       if (files.preview) formData.append('preview', files.preview)
 
-      const response = await axios.post(`${API_BASE_URL}/games/upload`, formData, {
+      const response = await axios.post(`${config.api.baseUrl}/games/upload`, formData, {
+        withCredentials: true,
         headers: { 'Content-Type': 'multipart/form-data' },
+        timeout: 60000, // 60 seconds for uploads
         onUploadProgress: (progressEvent) => {
           const percentCompleted = Math.round((progressEvent.loaded * 100) / progressEvent.total)
           if (onProgress) onProgress(percentCompleted)
@@ -64,7 +70,10 @@ export const gameService = {
   // Update game
   updateGame: async (gameId, gameData) => {
     try {
-      const response = await axios.put(`${API_BASE_URL}/games/${gameId}`, gameData)
+      const response = await axios.put(config.api.getFullUrl(config.api.endpoints.games.update(gameId)), gameData, {
+        withCredentials: true,
+        timeout: config.api.timeout
+      })
       return response.data
     } catch (error) {
       console.error('Error updating game:', error)
@@ -75,7 +84,10 @@ export const gameService = {
   // Delete game
   deleteGame: async (gameId) => {
     try {
-      const response = await axios.delete(`${API_BASE_URL}/games/${gameId}`)
+      const response = await axios.delete(config.api.getFullUrl(config.api.endpoints.games.delete(gameId)), {
+        withCredentials: true,
+        timeout: config.api.timeout
+      })
       return response.data
     } catch (error) {
       console.error('Error deleting game:', error)
@@ -86,7 +98,10 @@ export const gameService = {
   // Publish game
   publishGame: async (gameId) => {
     try {
-      const response = await axios.post(`${API_BASE_URL}/games/${gameId}/publish`)
+      const response = await axios.post(`${config.api.baseUrl}/games/${gameId}/publish`, {}, {
+        withCredentials: true,
+        timeout: config.api.timeout
+      })
       return response.data
     } catch (error) {
       console.error('Error publishing game:', error)
@@ -97,7 +112,10 @@ export const gameService = {
   // Bulk operations
   bulkUpload: async (gamesData) => {
     try {
-      const response = await axios.post(`${API_BASE_URL}/games/bulk-upload`, gamesData)
+      const response = await axios.post(`${config.api.baseUrl}/games/bulk-upload`, gamesData, {
+        withCredentials: true,
+        timeout: 60000 // 60 seconds for bulk uploads
+      })
       return response.data
     } catch (error) {
       console.error('Error bulk uploading games:', error)

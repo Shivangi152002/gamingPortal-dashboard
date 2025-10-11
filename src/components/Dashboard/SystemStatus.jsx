@@ -5,9 +5,8 @@ import {
   Warning as WarningIcon,
   Error as ErrorIcon,
 } from '@mui/icons-material'
-import axios from 'axios'
-
-const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://85.209.95.229:3000/api'
+import axios from '../../utils/axios'
+import { config } from '../../config'
 
 const StatusItem = ({ label, status, value }) => {
   const getStatusIcon = () => {
@@ -73,11 +72,15 @@ const SystemStatus = () => {
         
         // Test API health
         const startTime = Date.now()
-        const healthResponse = await axios.get(`${API_BASE_URL}/health`)
+        const healthResponse = await axios.get(`${config.api.baseUrl}/health`, {
+          timeout: config.api.timeout
+        })
         const responseTime = Date.now() - startTime
         
         // Test games API
-        const gamesResponse = await axios.get(`${API_BASE_URL}/games`)
+        const gamesResponse = await axios.get(config.api.getFullUrl(config.api.endpoints.games.list), {
+          timeout: config.api.timeout
+        })
         
         const stats = [
           { 

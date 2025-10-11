@@ -30,9 +30,8 @@ import {
   Visibility as ViewIcon
 } from '@mui/icons-material';
 import { useSnackbar } from 'notistack';
-import axios from 'axios';
-
-const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://85.209.95.229:3000/api';
+import axios from '../../utils/axios';
+import { config } from '../../config';
 
 const GameDataViewer = () => {
   const { enqueueSnackbar } = useSnackbar();
@@ -46,7 +45,9 @@ const GameDataViewer = () => {
   const fetchGameData = async () => {
     try {
       setLoading(true);
-      const response = await axios.get(`${API_BASE_URL}/games`);
+      const response = await axios.get(config.api.getFullUrl(config.api.endpoints.games.list), {
+        timeout: config.api.timeout
+      });
       if (response.data.success) {
         setGameData(response.data.data);
       }
@@ -79,7 +80,10 @@ const GameDataViewer = () => {
       }
 
       // Save to backend
-      const response = await axios.put(`${API_BASE_URL}/games/data/full-update`, parsedData);
+      const response = await axios.put(`${config.api.baseUrl}/games/data/full-update`, parsedData, {
+        withCredentials: true,
+        timeout: config.api.timeout
+      });
       
       if (response.data.success) {
         setGameData(parsedData);
@@ -102,7 +106,10 @@ const GameDataViewer = () => {
     }
 
     try {
-      const response = await axios.delete(`${API_BASE_URL}/games/${gameId}`);
+      const response = await axios.delete(config.api.getFullUrl(config.api.endpoints.games.delete(gameId)), {
+        withCredentials: true,
+        timeout: config.api.timeout
+      });
       if (response.data.success) {
         enqueueSnackbar('Game deleted successfully', { variant: 'success' });
         fetchGameData();

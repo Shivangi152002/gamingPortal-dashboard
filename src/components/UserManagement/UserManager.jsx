@@ -31,10 +31,9 @@ import {
   Refresh as RefreshIcon
 } from '@mui/icons-material';
 import { useSnackbar } from 'notistack';
-import axios from 'axios';
+import axios from '../../utils/axios';
 import { useAuth } from '../../context/AuthContext';
-
-const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://85.209.95.229:3000/api';
+import { config } from '../../config';
 
 const UserManager = () => {
   const { enqueueSnackbar } = useSnackbar();
@@ -60,7 +59,9 @@ const UserManager = () => {
   const fetchUsers = async () => {
     try {
       setLoading(true);
-      const response = await axios.get(`${API_BASE_URL}/users`);
+      const response = await axios.get(config.api.getFullUrl(config.api.endpoints.users.list), {
+        timeout: config.api.timeout
+      });
       if (response.data.success) {
         setUsers(response.data.data.users);
       }
@@ -132,7 +133,10 @@ const UserManager = () => {
           updateData.password = formData.password;
         }
 
-        const response = await axios.put(`${API_BASE_URL}/users/${currentUser.id}`, updateData);
+        const response = await axios.put(config.api.getFullUrl(config.api.endpoints.users.update(currentUser.id)), updateData, {
+          withCredentials: true,
+          timeout: config.api.timeout
+        });
         if (response.data.success) {
           enqueueSnackbar('User updated successfully', { variant: 'success' });
           fetchUsers();
@@ -140,7 +144,10 @@ const UserManager = () => {
         }
       } else {
         // Create new user
-        const response = await axios.post(`${API_BASE_URL}/users`, formData);
+        const response = await axios.post(config.api.getFullUrl(config.api.endpoints.users.create), formData, {
+          withCredentials: true,
+          timeout: config.api.timeout
+        });
         if (response.data.success) {
           enqueueSnackbar('User created successfully', { variant: 'success' });
           fetchUsers();
@@ -162,7 +169,10 @@ const UserManager = () => {
     }
 
     try {
-      const response = await axios.delete(`${API_BASE_URL}/users/${userId}`);
+      const response = await axios.delete(config.api.getFullUrl(config.api.endpoints.users.delete(userId)), {
+        withCredentials: true,
+        timeout: config.api.timeout
+      });
       if (response.data.success) {
         enqueueSnackbar('User deleted successfully', { variant: 'success' });
         fetchUsers();

@@ -38,49 +38,54 @@ import {
 } from '@mui/icons-material'
 import { useNavigate } from 'react-router-dom'
 import { useSnackbar } from 'notistack'
-import axios from 'axios'
+import axios from '../../utils/axios'
+import { config } from '../../config'
+import { getThumbnailUrl, getImageUrl as getApiImageUrl, handleImageError as apiHandleImageError, getGamePlayUrl } from '../../utils/apiConfig'
 
-const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://85.209.95.229:3000/api'
-
-// Helper function to get full image URL from S3 path
-const getImageUrl = (imagePath, cloudFrontUrl) => {
-  if (!imagePath) return 'https://via.placeholder.com/300x200/cccccc/666666?text=No+Image'
+// Helper function to get full image URL from S3 path using your API config
+const getImageUrl = (imagePath) => {
+  console.log('🖼️ getImageUrl called with:', imagePath);
   
-  // If it's already a full URL, return as is
-  if (imagePath.startsWith('http')) return imagePath
-  
-  // Clean the path - remove leading slash and public/ if present
-  let cleanPath = imagePath.replace(/^\/?public\//, '')
-  
-  // Use CloudFront URL if available
-  if (cloudFrontUrl) {
-    return `${cloudFrontUrl}/public/${cleanPath}`
+  if (!imagePath) {
+    console.log('❌ No imagePath provided, using placeholder');
+    // Return a data URI placeholder instead of external URL
+    const svg = `<svg width="300" height="200" xmlns="http://www.w3.org/2000/svg">
+      <rect width="100%" height="100%" fill="#cccccc"/>
+      <text x="50%" y="50%" font-family="Arial" font-size="16" fill="#666666" text-anchor="middle" dy=".3em">No Image</text>
+    </svg>`;
+    return `data:image/svg+xml;base64,${btoa(svg)}`;
   }
   
-  // Fallback to direct S3 URL
-  return `https://gameportal-assets.s3.amazonaws.com/public/${cleanPath}`
+  // If it's already a full URL, return as is
+  if (imagePath.startsWith('http')) {
+    console.log('✅ Already full URL:', imagePath);
+    return imagePath;
+  }
+  
+  // Use your API config system for thumbnails
+  const thumbnailUrl = getThumbnailUrl(imagePath);
+  const imageUrl = getApiImageUrl(imagePath);
+  const finalUrl = thumbnailUrl || imageUrl;
+  
+  console.log('🔧 URL construction:', {
+    original: imagePath,
+    thumbnailUrl,
+    imageUrl,
+    finalUrl
+  });
+  
+  return finalUrl;
 }
 
-// Helper function to get game play URL
-const getGameUrl = (playUrl, cloudFrontUrl) => {
+// Helper function to get game play URL using your API config
+const getGameUrl = (playUrl) => {
   if (!playUrl) return '#'
   
-  // If it's already a full URL, return as is
-  if (playUrl.startsWith('http')) return playUrl
-  
-  // Clean the path
-  let cleanPath = playUrl.replace(/^\/?games\//, '')
-  
-  // Use CloudFront URL if available
-  if (cloudFrontUrl) {
-    return `${cloudFrontUrl}/public/games/${cleanPath}`
-  }
-  
-  // Fallback to direct S3 URL
-  return `https://gameportal-assets.s3.amazonaws.com/public/games/${cleanPath}`
+  // Use your API config system for game URLs
+  return getGamePlayUrl(playUrl) || '#'
 }
 
-const GameCard = ({ game, onEdit, onDelete, onToggleFeatured, cloudFrontUrl, viewMode = 'grid' }) => {
+const GameCard = ({ game, onEdit, onDelete, onToggleFeatured, viewMode = 'grid' }) => {
   const [previewOpen, setPreviewOpen] = useState(false)
   const navigate = useNavigate()
 
@@ -93,8 +98,8 @@ const GameCard = ({ game, onEdit, onDelete, onToggleFeatured, cloudFrontUrl, vie
     setPreviewOpen(false)
   }
 
-  const thumbnailUrl = getImageUrl(game.thumb_url, cloudFrontUrl)
-  const gameUrl = getGameUrl(game.play_url, cloudFrontUrl)
+  const thumbnailUrl = getImageUrl(game.thumb_url)
+  const gameUrl = getGameUrl(game.play_url)
 
   return (
     <Card
@@ -142,9 +147,7 @@ const GameCard = ({ game, onEdit, onDelete, onToggleFeatured, cloudFrontUrl, vie
             minWidth: viewMode === 'list' ? 120 : 200,
             minHeight: viewMode === 'list' ? 120 : 200
           }}
-          onError={(e) => {
-            e.target.src = 'https://via.placeholder.com/200x200/cccccc/666666?text=No+Image'
-          }}
+          onError={(e) => apiHandleImageError(e)}
         />
         {/* Floating Action Buttons */}
         {/* <Box sx={{ 
@@ -441,7 +444,6 @@ const GameLibrary = () => {
   const [error, setError] = useState(null)
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false)
   const [gameToDelete, setGameToDelete] = useState(null)
-  const [cloudFrontUrl, setCloudFrontUrl] = useState(null)
   const [selectedFilter, setSelectedFilter] = useState('all')
 
           // Fetch games from S3 via API
@@ -450,7 +452,9 @@ const GameLibrary = () => {
               setLoading(true)
               setError(null)
               
-              const response = await axios.get(`${API_BASE_URL}/games`)
+              const response = await axios.get(config.api.getFullUrl(config.api.endpoints.games.list), {
+                timeout: config.api.timeout
+              })
               
               if (response.data.success) {
                 const gamesData = response.data.data.games || []
@@ -467,12 +471,9 @@ const GameLibrary = () => {
                 })
                 setGames(sortedGames)
                 
-                // Try to get CloudFront URL from environment or API
-                const cloudFront = import.meta.env.VITE_CLOUDFRONT_URL || 'https://d1xtpep1y73br3.cloudfront.net'
-                setCloudFrontUrl(cloudFront)
-                
                 console.log('📊 Loaded games:', gamesData.length)
                 console.log('🎮 First game:', gamesData[0])
+                console.log('🌐 CloudFront URL:', config.aws.cloudFrontUrl)
                 
                 enqueueSnackbar(`Loaded ${gamesData.length} games from S3`, { 
                   variant: 'success' 
@@ -502,7 +503,10 @@ const GameLibrary = () => {
 
   const confirmDelete = async () => {
     try {
-      await axios.delete(`${API_BASE_URL}/games/${gameToDelete}`)
+      await axios.delete(config.api.getFullUrl(config.api.endpoints.games.delete(gameToDelete)), {
+        withCredentials: true,
+        timeout: config.api.timeout
+      })
       setGames(games.filter(game => game.id !== gameToDelete))
       enqueueSnackbar('Game deleted successfully from S3', { variant: 'success' })
     } catch (error) {
@@ -675,7 +679,6 @@ const GameLibrary = () => {
               onEdit={handleEdit}
               onDelete={handleDelete}
               onToggleFeatured={handleToggleFeatured}
-              cloudFrontUrl={cloudFrontUrl}
               viewMode={viewMode}
             />
           </Grid>
