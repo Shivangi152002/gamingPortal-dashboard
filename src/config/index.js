@@ -48,7 +48,7 @@ const envConfig = {
   
   // AWS Configuration - fully from environment
   aws: {
-    cloudFrontUrl: getEnvVar('VITE_CLOUDFRONT_URL'),
+    cloudFrontUrl: getEnvVar('VITE_CLOUDFRONT_URL', 'https://d1xtpep1y73br3.cloudfront.net'),
     region: getEnvVar('VITE_AWS_REGION', 'us-east-1'),
   },
   
@@ -161,24 +161,54 @@ export const config = {
     cloudFrontUrl: envConfig.aws.cloudFrontUrl,
     region: envConfig.aws.region,
     
-    // Helper to get CloudFront URL for assets
-    getAssetUrl: (path) => {
+    /**
+     * Helper to get CloudFront URL for assets
+     * @param {string} path - Asset path (can include or exclude /public/ prefix)
+     * @param {string} assetType - Type of asset (thumbnail, gif, game, images)
+     * @returns {string} Full CloudFront URL
+     */
+    getAssetUrl: (path, assetType = 'images') => {
+      if (!path) return '';
+      if (path.startsWith('http://') || path.startsWith('https://')) return path;
       if (!envConfig.aws.cloudFrontUrl) {
         console.warn('⚠️ CLOUDFRONT_URL not configured');
         return path;
       }
-      const cleanPath = path.replace(/^\//, '');
-      return `${envConfig.aws.cloudFrontUrl}/${cleanPath}`;
+      
+      // Remove leading slash
+      let cleanPath = path.replace(/^\//, '');
+      
+      // Handle different asset types
+      if (assetType === 'thumbnail' && !cleanPath.startsWith('public/thumbnail/')) {
+        cleanPath = cleanPath.startsWith('thumbnail/') 
+          ? `public/${cleanPath}` 
+          : `public/thumbnail/${cleanPath}`;
+      } else if (assetType === 'gif' && !cleanPath.startsWith('public/gif/')) {
+        cleanPath = cleanPath.startsWith('gif/') 
+          ? `public/${cleanPath}` 
+          : `public/gif/${cleanPath}`;
+      } else if (assetType === 'game' && !cleanPath.startsWith('public/games/')) {
+        cleanPath = cleanPath.startsWith('games/') 
+          ? `public/${cleanPath}` 
+          : `public/games/${cleanPath}`;
+      } else if (!cleanPath.startsWith('public/')) {
+        cleanPath = `public/${cleanPath}`;
+      }
+      
+      // Encode path segments to handle spaces and special characters
+      const encodedPath = cleanPath.split('/').map(segment => 
+        segment.trim() === '' ? segment : encodeURIComponent(segment.trim())
+      ).join('/');
+      
+      return `${envConfig.aws.cloudFrontUrl}/${encodedPath}`;
     },
     
-    // Helper to get game asset URL
+    /**
+     * Helper to get game asset URL (deprecated - use getAssetUrl with 'game' type)
+     * @deprecated Use getAssetUrl(path, 'game') instead
+     */
     getGameAssetUrl: (gamePath) => {
-      if (!envConfig.aws.cloudFrontUrl) {
-        console.warn('⚠️ CLOUDFRONT_URL not configured');
-        return gamePath;
-      }
-      const cleanPath = gamePath.replace(/^(\/)?public\//, '');
-      return `${envConfig.aws.cloudFrontUrl}/public/${cleanPath}`;
+      return config.aws.getAssetUrl(gamePath, 'game');
     },
   },
 

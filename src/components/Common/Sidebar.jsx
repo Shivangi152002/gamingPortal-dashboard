@@ -23,6 +23,7 @@ import {
   Speed as PerformanceIcon,
   DataObject as DataIcon,
   People as PeopleIcon,
+  Settings as SettingsIcon,
   Logout as LogoutIcon,
 } from '@mui/icons-material'
 import { useAuth } from '../../context/AuthContext'
@@ -44,6 +45,7 @@ const Sidebar = ({ open, onClose, isMobile }) => {
     // { text: 'Game Editor', icon: <EditIcon />, path: '/games/editor' },
     // { text: 'Game Data (JSON)', icon: <DataIcon />, path: '/games/data-viewer' },
     { divider: true },
+    { text: 'Site Settings', icon: <SettingsIcon />, path: '/site-settings' },
     // { text: 'S3 Manager', icon: <StorageIcon />, path: '/aws/s3' },
     // { text: 'CloudFront', icon: <CloudIcon />, path: '/aws/cloudfront' },
     // { text: 'Performance', icon: <PerformanceIcon />, path: '/aws/performance' },

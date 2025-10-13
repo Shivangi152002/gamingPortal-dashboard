@@ -6,9 +6,11 @@ import GameManagement from './pages/GameManagement'
 import AWSConsole from './pages/AWSConsole'
 import Analytics from './pages/Analytics'
 import UserManagement from './pages/UserManagement'
+import SiteSettings from './pages/SiteSettings'
 import Login from './pages/Login'
 import ErrorBoundary from './components/Common/ErrorBoundary'
 import { AuthProvider, useAuth } from './context/AuthContext'
+import { CustomThemeProvider } from './context/ThemeContext'
 
 // Protected Route Component
 const ProtectedRoute = ({ children }) => {
@@ -37,6 +39,7 @@ function AppRoutes() {
           <Route path="aws/*" element={<AWSConsole />} />
           <Route path="analytics" element={<Analytics />} />
           <Route path="users" element={<UserManagement />} />
+          <Route path="site-settings" element={<SiteSettings />} />
           <Route path="*" element={<Navigate to="/dashboard" replace />} />
         </Route>
       </Routes>
@@ -46,9 +49,11 @@ function AppRoutes() {
 
 function App() {
   return (
-    <AuthProvider>
-      <AppRoutes />
-    </AuthProvider>
+    <CustomThemeProvider>
+      <AuthProvider>
+        <AppRoutes />
+      </AuthProvider>
+    </CustomThemeProvider>
   )
 }
 

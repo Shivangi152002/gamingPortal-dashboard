@@ -1,128 +1,98 @@
-// Dynamic API Configuration
-// Change this base URL to switch between different backends/deployments
-// Everything in the system will use this centralized configuration
+/**
+ * ============================================
+ * CENTRALIZED CLOUDFRONT & ASSET CONFIGURATION
+ * ============================================
+ * 
+ * This module provides utilities for constructing CloudFront URLs
+ * for game assets (thumbnails, gifs, games, etc.)
+ * 
+ * Usage:
+ * import { getAssetUrl, getThumbnailUrl, getGifUrl, getGamePlayUrl } from '@/utils/apiConfig';
+ */
 
-// Development vs Production URL handling
-const isDevelopment = import.meta.env.DEV;
+// Get CloudFront URL from environment variable
+const CLOUDFRONT_URL = import.meta.env.VITE_CLOUDFRONT_URL || 'https://d1xtpep1y73br3.cloudfront.net';
 
 export const API_CONFIG = {
-  // In development: Use Vite proxy to bypass CORS (FAST!)
-  // In production: Use CloudFront directly
-  BASE_URL: isDevelopment 
-    ? '' // Empty for same-origin (uses Vite proxy)
-    : 'https://d1xtpep1y73br3.cloudfront.net',
+  // CloudFront direct URL (for all asset URLs)
+  CLOUDFRONT_URL,
   
-  ENDPOINTS: {
-    GAMES_DATA: isDevelopment 
-      ? '/api/cloudfront/public/game-data.json' // Vite proxy route
-      : '/public/game-data.json' // CloudFront direct
-  },
-  
-  // Path prefixes for different asset types - all assets come from BASE_URL
+  // Path prefixes for different asset types
   PATHS: {
     GAMES: '/public/games/',
     THUMBNAILS: '/public/thumbnail/',
     GIFS: '/public/gif/',
     IMAGES: '/public/',
     ASSETS: '/public/'
-  },
-  
-  // CloudFront direct URL (for production and asset URLs)
-  CLOUDFRONT_URL: 'https://d1xtpep1y73br3.cloudfront.net'
-};
-
-// Utility function to construct full URLs from endpoints
-export const getApiUrl = (endpoint) => {
-  return `${API_CONFIG.BASE_URL}${endpoint}`;
-};
-
-// Dynamic Asset URL Constructor - handles all asset types from BASE_URL (OPTIMIZED)
-export const getAssetUrl = (assetPath, assetType = 'images') => {
-  console.log('🔧 getAssetUrl called:', { assetPath, assetType });
-  
-  if (!assetPath) {
-    console.log('❌ No assetPath provided');
-    return null;
   }
+};
+
+/**
+ * Dynamic Asset URL Constructor - handles all asset types from CloudFront
+ * @param {string} assetPath - The path to the asset
+ * @param {string} assetType - Type of asset (images, thumbnail, gif, game)
+ * @returns {string|null} Full CloudFront URL
+ */
+export const getAssetUrl = (assetPath, assetType = 'images') => {
+  if (!assetPath) return null;
   
   // If the path already includes a full URL, return as is
   if (assetPath.startsWith('http://') || assetPath.startsWith('https://')) {
-    console.log('✅ Already full URL:', assetPath);
     return assetPath;
   }
   
   // Remove leading slash if present to avoid double slashes
   let cleanPath = assetPath.startsWith('/') ? assetPath.slice(1) : assetPath;
-  console.log('🧹 Cleaned path:', cleanPath);
   
-  // Handle different asset types dynamically based on API_CONFIG.PATHS
+  // Handle different asset types dynamically
   if (assetType === 'thumbnail' && !cleanPath.startsWith('public/thumbnail/')) {
-    // If it's a thumbnail and doesn't have the full path, construct it
     if (cleanPath.startsWith('thumbnail/')) {
       cleanPath = `public/${cleanPath}`;
     } else {
       cleanPath = `public/thumbnail/${cleanPath}`;
     }
-    console.log('🖼️ Thumbnail path constructed:', cleanPath);
   } else if (assetType === 'gif' && !cleanPath.startsWith('public/gif/')) {
-    // If it's a GIF and doesn't have the full path, construct it
     if (cleanPath.startsWith('gif/')) {
       cleanPath = `public/${cleanPath}`;
     } else {
       cleanPath = `public/gif/${cleanPath}`;
     }
-    console.log('🎬 GIF path constructed:', cleanPath);
   } else if (assetType === 'game' && !cleanPath.startsWith('public/games/')) {
-    // If it's a game asset and doesn't have the full path, construct it
     if (cleanPath.startsWith('games/')) {
       cleanPath = `public/${cleanPath}`;
     } else {
       cleanPath = `public/games/${cleanPath}`;
     }
-    console.log('🎮 Game path constructed:', cleanPath);
   } else if (!cleanPath.startsWith('public/')) {
-    // For other assets, ensure they have the /public/ prefix
     cleanPath = `public/${cleanPath}`;
-    console.log('📁 Added public prefix:', cleanPath);
   }
   
   // Split path into segments and encode each segment to handle spaces and special characters
   const pathSegments = cleanPath.split('/');
   const encodedSegments = pathSegments.map(segment => {
-    if (segment.trim() === '') return segment; // Keep empty segments as is
-    return encodeURIComponent(segment.trim()); // Encode and trim each segment
+    if (segment.trim() === '') return segment;
+    return encodeURIComponent(segment.trim());
   });
   
   const encodedPath = encodedSegments.join('/');
-  console.log('🔤 Encoded path:', encodedPath);
   
-  // Always use CloudFront for assets (images, thumbnails, games)
-  // Even in development, assets load directly from CloudFront
-  const baseUrl = API_CONFIG.CLOUDFRONT_URL;
-  const url = `${baseUrl}/${encodedPath}`;
-  
-  console.log('🌐 Final URL:', url);
-  return url;
+  // Construct full CloudFront URL
+  return `${CLOUDFRONT_URL}/${encodedPath}`;
 };
 
-// Specific functions for different asset types - all use the dynamic getAssetUrl
+/**
+ * Specific functions for different asset types
+ */
 export const getImageUrl = (imagePath) => getAssetUrl(imagePath, 'images');
 export const getThumbnailUrl = (thumbnailPath) => getAssetUrl(thumbnailPath, 'thumbnail');
 export const getGifUrl = (gifPath) => getAssetUrl(gifPath, 'gif');
 
-// Enhanced error handling for image loading
-export const handleImageError = (e, fallbackUrl = null) => {
-  console.warn('Image failed to load:', e.target.src);
-  e.target.onerror = null; // Prevent infinite loop
-  
-  // Use dynamic fallback from our asset system instead of hardcoded paths
-  if (!fallbackUrl) {
-    fallbackUrl = getAssetUrl('mock-assets/test.gif');
-  }
-  e.target.src = fallbackUrl;
-};
-
-// Enhanced function specifically for game play URLs with better error handling
+/**
+ * Enhanced function specifically for game play URLs
+ * @param {string} playUrl - Game play URL or path
+ * @param {string} gameName - Game name for logging
+ * @returns {string|null} Full game URL
+ */
 export const getGamePlayUrl = (playUrl, gameName = '') => {
   if (!playUrl) {
     console.warn('No play URL provided for game:', gameName);
@@ -134,20 +104,24 @@ export const getGamePlayUrl = (playUrl, gameName = '') => {
     return playUrl;
   }
   
-  // Handle game URLs specifically - use our dynamic asset system
+  // Handle game URLs specifically
   return getAssetUrl(playUrl, 'game');
 };
 
-// Debug function to log URL transformations
-export const debugUrl = (originalUrl, transformedUrl, context = '') => {
-  if (process.env.NODE_ENV === 'development') {
-    console.log(`URL Debug ${context}:`, {
-      original: originalUrl,
-      transformed: transformedUrl,
-      baseUrl: API_CONFIG.BASE_URL,
-      isFullUrl: originalUrl?.startsWith('http')
-    });
+/**
+ * Enhanced error handling for image loading
+ * @param {Event} e - Error event
+ * @param {string} fallbackUrl - Optional fallback URL
+ */
+export const handleImageError = (e, fallbackUrl = null) => {
+  console.warn('Image failed to load:', e.target.src);
+  e.target.onerror = null; // Prevent infinite loop
+  
+  // Use placeholder or custom fallback
+  if (!fallbackUrl) {
+    fallbackUrl = 'data:image/svg+xml,%3Csvg xmlns="http://www.w3.org/2000/svg" width="300" height="200"%3E%3Crect fill="%23ccc" width="300" height="200"/%3E%3Ctext fill="%23666" x="50%25" y="50%25" dominant-baseline="middle" text-anchor="middle"%3EImage Not Found%3C/text%3E%3C/svg%3E';
   }
+  e.target.src = fallbackUrl;
 };
 
 export default API_CONFIG;

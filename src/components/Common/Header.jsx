@@ -11,6 +11,7 @@ import {
   MenuItem,
   Divider,
   Chip,
+  Tooltip,
 } from '@mui/material'
 import {
   Menu as MenuIcon,
@@ -18,14 +19,18 @@ import {
   Settings as SettingsIcon,
   AccountCircle as AccountCircleIcon,
   Logout as LogoutIcon,
+  Brightness4 as DarkModeIcon,
+  Brightness7 as LightModeIcon,
 } from '@mui/icons-material'
 import SportsEsportsIcon from '@mui/icons-material/SportsEsports'
 import { useAuth } from '../../context/AuthContext'
+import { useThemeMode } from '../../context/ThemeContext'
 import { useNavigate } from 'react-router-dom'
 import { useSnackbar } from 'notistack'
 
 const Header = ({ onMenuClick }) => {
   const { user, logout, isAuthenticated } = useAuth()
+  const { mode, toggleTheme, isDarkMode } = useThemeMode()
   const navigate = useNavigate()
   const { enqueueSnackbar } = useSnackbar()
   const [anchorEl, setAnchorEl] = React.useState(null)
@@ -76,8 +81,9 @@ const Header = ({ onMenuClick }) => {
       position="fixed" 
       sx={{ 
         zIndex: (theme) => theme.zIndex.drawer + 1,
-        backgroundColor: '#1976d2',
-        boxShadow: '0px 2px 8px rgba(0,0,0,0.1)',
+        backgroundColor: isDarkMode ? '#1e1e1e' : '#1976d2',
+        boxShadow: isDarkMode ? '0px 2px 8px rgba(0,0,0,0.5)' : '0px 2px 8px rgba(0,0,0,0.1)',
+        transition: 'background-color 0.3s ease',
       }}
     >
       <Toolbar>
@@ -106,11 +112,29 @@ const Header = ({ onMenuClick }) => {
             </Box>
           )}
 
-          <IconButton onClick={handleProfileMenuOpen} sx={{ ml: 1 }}>
+          {/* Profile Icon */}
+          <IconButton onClick={handleProfileMenuOpen}>
             <Avatar sx={{ width: 32, height: 32, bgcolor: 'secondary.main' }}>
               {getUserDisplayName().charAt(0).toUpperCase()}
             </Avatar>
           </IconButton>
+
+          {/* Dark/Light Mode Toggle - Right corner */}
+          <Tooltip title={isDarkMode ? 'Switch to Light Mode' : 'Switch to Dark Mode'}>
+            <IconButton 
+              onClick={toggleTheme} 
+              sx={{ 
+                color: 'white',
+                transition: 'all 0.3s ease',
+                '&:hover': {
+                  transform: 'rotate(180deg)',
+                  backgroundColor: 'rgba(255, 255, 255, 0.1)',
+                }
+              }}
+            >
+              {isDarkMode ? <LightModeIcon /> : <DarkModeIcon />}
+            </IconButton>
+          </Tooltip>
         </Box>
 
         {/* Profile Menu */}
