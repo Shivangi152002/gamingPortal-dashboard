@@ -35,6 +35,7 @@ import {
 import { useSnackbar } from 'notistack'
 import axios from '../utils/axios'
 import { config } from '../config'
+import SocialLinksManager from '../components/SiteSettings/SocialLinksManager'
 
 // Tab Panel Component
 function TabPanel({ children, value, index }) {
@@ -105,7 +106,10 @@ const SiteSettings = () => {
             facebook: '',
             youtube: ''
           },
-          customMetaTags: data.customMetaTags || []
+          customMetaTags: (data.customMetaTags || []).map(tag => ({
+            ...tag,
+            active: tag.active !== undefined ? tag.active : true
+          }))
         }
         setSettings(normalizedSettings)
         enqueueSnackbar('Settings loaded successfully', { variant: 'success' })
@@ -199,7 +203,7 @@ const SiteSettings = () => {
   const handleAddMetaTag = () => {
     setSettings(prev => ({
       ...prev,
-      customMetaTags: [...(prev.customMetaTags || []), { property: '', content: '' }]
+      customMetaTags: [...(prev.customMetaTags || []), { property: '', content: '', active: true }]
     }))
   }
 
@@ -209,11 +213,10 @@ const SiteSettings = () => {
     setSettings(prev => ({ ...prev, customMetaTags: newMetaTags }))
   }
 
-  const handleRemoveMetaTag = (index) => {
-    setSettings(prev => ({
-      ...prev,
-      customMetaTags: (prev.customMetaTags || []).filter((_, i) => i !== index)
-    }))
+  const handleToggleMetaTagActive = (index) => {
+    const newMetaTags = [...(settings.customMetaTags || [])]
+    newMetaTags[index].active = newMetaTags[index].active === false ? true : false
+    setSettings(prev => ({ ...prev, customMetaTags: newMetaTags }))
   }
 
   const handleFaviconUpload = async (event) => {
@@ -573,15 +576,16 @@ const SiteSettings = () => {
                     <strong>Meta Tag Examples:</strong>
                   </Typography>
                   <Typography variant="body2" component="div">
-                    <strong>For SEO:</strong><br />
-                    • name="keywords" → content="games, html5, online games"<br />
-                    • name="author" → content="Your Name"<br />
-                    • name="robots" → content="index, follow"<br /><br />
-                    <strong>For Social Media:</strong><br />
-                    • property="og:title" → content="GameLauncher - Play Games"<br />
-                    • property="og:description" → content="Best HTML5 games..."<br />
-                    • property="og:image" → content="https://yourdomain.com/image.jpg"<br />
-                    • name="twitter:card" → content="summary_large_image"
+                    <strong>Common Meta Tags:</strong><br />
+                    • <code>og:title</code> → Page title for social sharing<br />
+                    • <code>og:description</code> → Page description for social sharing<br />
+                    • <code>og:image</code> → Image for social sharing<br />
+                    • <code>keywords</code> → SEO keywords<br />
+                    • <code>robots</code> → Search engine instructions<br />
+                    • <code>twitter:card</code> → Twitter card type<br />
+                    • <code>author</code> → Content author<br />
+                    • <code>viewport</code> → Mobile viewport settings<br />
+                    • Any custom meta tag you need!
                   </Typography>
                 </Alert>
               </Grid>
@@ -589,7 +593,13 @@ const SiteSettings = () => {
               {/* Dynamic Meta Tags */}
               {settings.customMetaTags?.map((metaTag, index) => (
                 <Grid item xs={12} key={index}>
-                  <Paper sx={{ p: 2, bgcolor: 'background.default' }}>
+                  <Paper sx={{ 
+                    p: 2, 
+                    bgcolor: metaTag.active === false ? 'action.hover' : 'background.default',
+                    opacity: metaTag.active === false ? 0.6 : 1,
+                    border: metaTag.active === false ? '1px dashed' : 'none',
+                    borderColor: 'divider'
+                  }}>
                     <Grid container spacing={2} alignItems="center">
                       <Grid item xs={12} md={3}>
                         <TextField
@@ -597,9 +607,10 @@ const SiteSettings = () => {
                           label="Property/Name"
                           value={metaTag.property}
                           onChange={(e) => handleUpdateMetaTag(index, 'property', e.target.value)}
-                          placeholder="og:title or keywords"
+                          placeholder="og:title, keywords, robots, etc."
                           size="small"
-                          helperText="og:title, og:description, keywords, etc."
+                          helperText="Any meta tag property/name (og:title, keywords, robots, twitter:card, etc.)"
+                          disabled={metaTag.active === false}
                         />
                       </Grid>
                       <Grid item xs={12} md={8}>
@@ -608,22 +619,33 @@ const SiteSettings = () => {
                           label="Content"
                           value={metaTag.content}
                           onChange={(e) => handleUpdateMetaTag(index, 'content', e.target.value)}
-                          placeholder="Your meta tag content"
+                          placeholder="Meta tag content value"
                           size="small"
                           multiline
                           rows={2}
+                          disabled={metaTag.active === false}
                         />
                       </Grid>
                       <Grid item xs={12} md={1}>
-                        <IconButton
-                          color="error"
-                          onClick={() => handleRemoveMetaTag(index)}
-                          size="small"
-                        >
-                          <DeleteIcon />
-                        </IconButton>
+                        <Tooltip title={metaTag.active === false ? 'Activate Meta Tag' : 'Deactivate Meta Tag'}>
+                          <IconButton
+                            color={metaTag.active === false ? 'success' : 'warning'}
+                            onClick={() => handleToggleMetaTagActive(index)}
+                            size="small"
+                          >
+                            {metaTag.active === false ? <VisibilityIcon /> : <VisibilityOffIcon />}
+                          </IconButton>
+                        </Tooltip>
                       </Grid>
                     </Grid>
+                    {metaTag.active === false && (
+                      <Chip 
+                        label="Inactive - Hidden on website" 
+                        size="small" 
+                        color="warning" 
+                        sx={{ mt: 1 }}
+                      />
+                    )}
                   </Paper>
                 </Grid>
               ))}
@@ -955,75 +977,10 @@ const SiteSettings = () => {
         {/* Tab 4: Social Links */}
         <TabPanel value={activeTab} index={3}>
           <Box sx={{ p: 3 }}>
-            <Grid container spacing={3}>
-              <Grid item xs={12}>
-                <Typography variant="h6" gutterBottom>
-                  Social Media Links
-                </Typography>
-                <Divider sx={{ mb: 3 }} />
-              </Grid>
-
-              <Grid item xs={12} md={6}>
-                <TextField
-                  fullWidth
-                  label="LinkedIn"
-                  value={settings.socialLinks?.linkedin || ''}
-                  onChange={(e) => handleNestedChange('socialLinks', 'linkedin', e.target.value)}
-                  placeholder="https://linkedin.com/company/yourcompany"
-                  helperText="Your LinkedIn company/profile URL"
-                />
-              </Grid>
-
-              <Grid item xs={12} md={6}>
-                <TextField
-                  fullWidth
-                  label="Facebook"
-                  value={settings.socialLinks?.facebook || ''}
-                  onChange={(e) => handleNestedChange('socialLinks', 'facebook', e.target.value)}
-                  placeholder="https://facebook.com/yourpage"
-                  helperText="Your Facebook page URL"
-                />
-              </Grid>
-
-              <Grid item xs={12} md={6}>
-                <TextField
-                  fullWidth
-                  label="Twitter"
-                  value={settings.socialLinks?.twitter || ''}
-                  onChange={(e) => handleNestedChange('socialLinks', 'twitter', e.target.value)}
-                  placeholder="https://twitter.com/youraccount"
-                  helperText="Your Twitter profile URL"
-                />
-              </Grid>
-
-              <Grid item xs={12} md={6}>
-                <TextField
-                  fullWidth
-                  label="Instagram"
-                  value={settings.socialLinks?.instagram || ''}
-                  onChange={(e) => handleNestedChange('socialLinks', 'instagram', e.target.value)}
-                  placeholder="https://instagram.com/youraccount"
-                  helperText="Your Instagram profile URL"
-                />
-              </Grid>
-
-              <Grid item xs={12} md={6}>
-                <TextField
-                  fullWidth
-                  label="YouTube"
-                  value={settings.socialLinks?.youtube || ''}
-                  onChange={(e) => handleNestedChange('socialLinks', 'youtube', e.target.value)}
-                  placeholder="https://youtube.com/yourchannel"
-                  helperText="Your YouTube channel URL"
-                />
-              </Grid>
-
-              <Grid item xs={12}>
-                <Alert severity="info">
-                  Leave blank if you don't want to show a particular social media link.
-                </Alert>
-              </Grid>
-            </Grid>
+            <SocialLinksManager
+              socialLinks={settings.socialLinks || {}}
+              onChange={(updatedLinks) => handleInputChange('socialLinks', updatedLinks)}
+            />
           </Box>
         </TabPanel>
       </Paper>

@@ -252,6 +252,20 @@ const GameCard = ({ game, onEdit, onDelete, onToggleFeatured, viewMode = 'grid' 
                     alignItems: 'center'
                   }}>
                     <Box sx={{ display: 'flex', gap: 0.5, flexWrap: 'nowrap' }}>
+                      {/* Rank Chip */}
+                      <Chip 
+                        label={`#${game.rank || 'N/A'}`} 
+                        size="small" 
+                        variant="filled" 
+                        color="primary"
+                        sx={{ 
+                          fontSize: 9,
+                          height: 20,
+                          minWidth: 'auto',
+                          flexShrink: 0,
+                          fontWeight: 'bold'
+                        }} 
+                      />
                       <Chip 
                         label={game.category} 
                         size="small" 
@@ -259,7 +273,6 @@ const GameCard = ({ game, onEdit, onDelete, onToggleFeatured, viewMode = 'grid' 
                         sx={{ 
                           fontSize: 9,
                           height: 20,
-                          
                           minWidth: 'auto',
                           flexShrink: 0
                         }} 
@@ -269,6 +282,19 @@ const GameCard = ({ game, onEdit, onDelete, onToggleFeatured, viewMode = 'grid' 
                         size="small" 
                         variant="outlined" 
                         color="secondary" 
+                        sx={{ 
+                          fontSize: 9,
+                          height: 20,
+                          minWidth: 'auto',
+                          flexShrink: 0
+                        }} 
+                      />
+                      {/* Play Count Chip */}
+                      <Chip 
+                        label={`${game.playCount || 0} plays`} 
+                        size="small" 
+                        variant="outlined" 
+                        color="success"
                         sx={{ 
                           fontSize: 9,
                           height: 20,

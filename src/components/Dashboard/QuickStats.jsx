@@ -2,49 +2,47 @@ import React, { useState, useEffect } from 'react'
 import { Grid, Paper, Box, Typography } from '@mui/material'
 import {
   SportsEsports as GamesIcon,
-  Storage as StorageIcon,
-  TrendingUp as TrendingIcon,
+  Category as CategoryIcon,
   People as PeopleIcon,
+  TrendingUp as TrendingIcon,
 } from '@mui/icons-material'
 import axios from '../../utils/axios'
 import { config } from '../../config'
 
-const StatCard = ({ title, value, subtitle, icon, color }) => (
+const StatCard = ({ title, value, icon, color }) => (
   <Paper
     elevation={2}
     sx={{
       p: 3,
       height: '100%',
-      borderLeft: `4px solid ${color}`,
+      borderRadius: 2,
       transition: 'transform 0.2s, box-shadow 0.2s',
       '&:hover': {
-        transform: 'translateY(-4px)',
+        transform: 'translateY(-2px)',
         boxShadow: 4,
       },
     }}
   >
-    <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
+    <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
       <Box>
-        <Typography variant="body2" color="text.secondary" gutterBottom>
+        <Typography variant="body2" color="text.secondary" gutterBottom sx={{ fontSize: '0.875rem', fontWeight: 500 }}>
           {title}
         </Typography>
-        <Typography variant="h4" sx={{ fontWeight: 600, mb: 1 }}>
+        <Typography variant="h3" sx={{ fontWeight: 700, color: color, lineHeight: 1.2 }}>
           {value}
-        </Typography>
-        <Typography variant="caption" color="success.main">
-          {subtitle}
         </Typography>
       </Box>
       <Box
         sx={{
-          backgroundColor: `${color}15`,
+          backgroundColor: `${color}20`,
           borderRadius: 2,
-          p: 1.5,
+          p: 2,
           display: 'flex',
           alignItems: 'center',
+          justifyContent: 'center',
         }}
       >
-        {React.cloneElement(icon, { sx: { fontSize: 32, color: color } })}
+        {React.cloneElement(icon, { sx: { fontSize: 40, color: color, opacity: 0.8 } })}
       </Box>
     </Box>
   </Paper>
@@ -52,9 +50,9 @@ const StatCard = ({ title, value, subtitle, icon, color }) => (
 
 const QuickStats = () => {
   const [gameCount, setGameCount] = useState(0)
-  const [totalSize, setTotalSize] = useState(0)
-  const [categories, setCategories] = useState({})
-  const [apiStatus, setApiStatus] = useState('Offline')
+  const [categoryCount, setCategoryCount] = useState(0)
+  const [userCount, setUserCount] = useState(0)
+  const [totalPlays, setTotalPlays] = useState(0)
   const [loading, setLoading] = useState(true)
 
   useEffect(() => {
@@ -66,36 +64,31 @@ const QuickStats = () => {
         const gamesResponse = await axios.get(config.api.getFullUrl(config.api.endpoints.games.list), {
           timeout: config.api.timeout
         })
+        
+        // Fetch ranking statistics
+        const rankingResponse = await axios.get(config.api.getFullUrl(config.api.endpoints.ranking.statistics), {
+          timeout: config.api.timeout
+        })
+        
         if (gamesResponse.data.success) {
           const games = gamesResponse.data.data.games || []
           setGameCount(games.length)
           
-          // Calculate total size based on game sizes
-          const sizeMap = { small: 50, medium: 150, large: 300 } // MB per size
-          const totalSizeMB = games.reduce((total, game) => {
-            return total + (sizeMap[game.size] || 50)
-          }, 0)
-          setTotalSize(totalSizeMB)
-          
-          // Count categories
-          const categoryCount = games.reduce((acc, game) => {
-            acc[game.category] = (acc[game.category] || 0) + 1
-            return acc
-          }, {})
-          setCategories(categoryCount)
+          // Count unique categories
+          const uniqueCategories = new Set(games.map(game => game.category).filter(Boolean))
+          setCategoryCount(uniqueCategories.size)
         }
         
-        // Test API status
-        const healthResponse = await axios.get(`${config.api.baseUrl}/health`, {
-          timeout: config.api.timeout
-        })
-        if (healthResponse.data.status === 'OK') {
-          setApiStatus('Online')
+        if (rankingResponse.data.success) {
+          const stats = rankingResponse.data.data
+          setTotalPlays(stats.totalPlays || 0)
         }
+        
+        // For now, set a mock user count (you can implement user tracking later)
+        setUserCount(5) // This would come from your user management system
         
       } catch (error) {
         console.error('Error fetching stats:', error)
-        setApiStatus('Error')
       } finally {
         setLoading(false)
       }
@@ -104,53 +97,31 @@ const QuickStats = () => {
     fetchStats()
   }, [])
  
-  const formatSize = (sizeInMB) => {
-    if (sizeInMB < 1024) {
-      return `${sizeInMB} MB`
-    } else {
-      return `${(sizeInMB / 1024).toFixed(1)} GB`
-    }
-  }
-
-  const getCategoryCount = () => {
-    return Object.keys(categories).length
-  }
-
   const stats = [
     {
       title: 'Total Games',
       value: loading ? '...' : gameCount.toString(),
-      subtitle: `${getCategoryCount()} categories`,
       icon: <GamesIcon />,
-      color: '#1976d2',
+      color: '#9c27b0', // Purple
     },
     {
-      title: 'Storage Used',
-      value: loading ? '...' : formatSize(totalSize),
-      subtitle: 'Estimated from games',
-      icon: <StorageIcon />,
-      color: '#388e3c',
+      title: 'Total Categories',
+      value: loading ? '...' : categoryCount.toString(),
+      icon: <CategoryIcon />,
+      color: '#4caf50', // Green
     },
-    // {
-    //   title: 'CloudFront CDN',
-    //   value: apiStatus === 'Online' ? 'Active' : 'Offline',
-    //   subtitle: apiStatus === 'Online' ? 'Global Delivery' : 'Check connection',
-    //   icon: <TrendingIcon />,
-    //   color: apiStatus === 'Online' ? '#f57c00' : '#f44336',
-    // },
-    // {
-    //   title: 'API Status',
-    //   value: apiStatus,
-    //   subtitle: apiStatus === 'Online' ? 'Backend Connected' : 'Connection Error',
-    //   icon: <PeopleIcon />,
-    //   color: apiStatus === 'Online' ? '#7b1fa2' : '#f44336',
-    // },
+    {
+      title: 'Total Users',
+      value: loading ? '...' : userCount.toString(),
+      icon: <PeopleIcon />,
+      color: '#00bcd4', // Teal/Cyan
+    },
   ]
 
   return (
     <Grid container spacing={3}>
       {stats.map((stat, index) => (
-        <Grid item xs={12} sm={6} md={3} key={index}>
+        <Grid item xs={12} sm={6} md={4} key={index}>
           <StatCard {...stat} />
         </Grid>
       ))}

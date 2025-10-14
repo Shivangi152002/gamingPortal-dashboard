@@ -3,6 +3,7 @@ import { Routes, Route, Navigate } from 'react-router-dom'
 import Layout from './components/Common/Layout'
 import AdminDashboard from './pages/AdminDashboard'
 import GameManagement from './pages/GameManagement'
+import GameRanking from './pages/GameRanking'
 import AWSConsole from './pages/AWSConsole'
 import Analytics from './pages/Analytics'
 import UserManagement from './pages/UserManagement'
@@ -36,6 +37,7 @@ function AppRoutes() {
           <Route index element={<Navigate to="/dashboard" replace />} />
           <Route path="dashboard" element={<AdminDashboard />} />
           <Route path="games/*" element={<GameManagement />} />
+          <Route path="ranking" element={<GameRanking />} />
           <Route path="aws/*" element={<AWSConsole />} />
           <Route path="analytics" element={<Analytics />} />
           <Route path="users" element={<UserManagement />} />

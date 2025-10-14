@@ -25,6 +25,7 @@ import {
   People as PeopleIcon,
   Settings as SettingsIcon,
   Logout as LogoutIcon,
+  TrendingUp as RankingIcon,
 } from '@mui/icons-material'
 import { useAuth } from '../../context/AuthContext'
 
@@ -42,6 +43,7 @@ const Sidebar = ({ open, onClose, isMobile }) => {
     { divider: true },
     { text: 'Game Library', icon: <LibraryIcon />, path: '/games/library' },
     { text: 'Upload Game', icon: <UploadIcon />, path: '/games/upload' },
+    { text: 'Game Rankings', icon: <RankingIcon />, path: '/ranking' },
     // { text: 'Game Editor', icon: <EditIcon />, path: '/games/editor' },
     // { text: 'Game Data (JSON)', icon: <DataIcon />, path: '/games/data-viewer' },
     { divider: true },

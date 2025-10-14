@@ -145,6 +145,17 @@ export const config = {
         games: '/analytics/games',
         users: '/analytics/users',
       },
+      
+      // Ranking
+      ranking: {
+        trackPlay: '/ranking/track-play',
+        topGames: '/ranking/top-games',
+        allGames: '/ranking/all-games',
+        gameStatus: '/ranking/game-status',
+        setRank: '/ranking/set-rank',
+        statistics: '/ranking/statistics',
+        recalculate: '/ranking/recalculate',
+      },
     },
     
     // Full URL builder helper

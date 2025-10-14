@@ -5,6 +5,7 @@ import QuickStats from '../components/Dashboard/QuickStats'
 import PerformanceChart from '../components/Dashboard/PerformanceChart'
 import SystemStatus from '../components/Dashboard/SystemStatus'
 import RecentGames from '../components/Dashboard/RecentGames'
+import TopGamesRanking from '../components/Dashboard/TopGamesRanking'
 
 const AdminDashboard = () => {
   return (
@@ -26,6 +27,11 @@ const AdminDashboard = () => {
         {/* <Grid item xs={12} md={4}>
           <SystemStatus />
         </Grid> */}
+
+        {/* Top Games Ranking */}
+        <Grid item xs={12}>
+          <TopGamesRanking />
+        </Grid>
 
         {/* Performance Chart */}
         <Grid item xs={12}>
