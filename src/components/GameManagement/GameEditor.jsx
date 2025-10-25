@@ -27,6 +27,7 @@ import {
   DialogTitle,
   DialogContent,
   DialogActions,
+  OutlinedInput,
 } from '@mui/material'
 import {
   Save as SaveIcon,
@@ -721,12 +722,21 @@ const GameEditor = () => {
              />
 
             <FormControl fullWidth sx={{ mb: 2 }}>
-              <InputLabel>Category</InputLabel>
+              <InputLabel>Categories</InputLabel>
               <Select
-                value={formData.category}
-                label="Category"
+                multiple
+                value={Array.isArray(formData.category) ? formData.category : [formData.category].filter(Boolean)}
+                label="Categories"
                 onChange={(e) => handleInputChange('category', e.target.value)}
                 disabled={uploadingFiles}
+                input={<OutlinedInput label="Categories" />}
+                renderValue={(selected) => (
+                  <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 0.5 }}>
+                    {selected.map((value) => (
+                      <Chip key={value} label={value} size="small" />
+                    ))}
+                  </Box>
+                )}
               >
                 {categories.map((cat) => (
                   <MenuItem key={cat} value={cat}>
@@ -734,6 +744,9 @@ const GameEditor = () => {
                   </MenuItem>
                 ))}
               </Select>
+              <Typography variant="caption" color="text.secondary" sx={{ mt: 0.5, ml: 2 }}>
+                Select one or more categories
+              </Typography>
             </FormControl>
 
             <FormControl fullWidth sx={{ mb: 2 }}>

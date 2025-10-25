@@ -19,6 +19,7 @@ import {
   DialogContent,
   DialogActions,
   CircularProgress,
+  OutlinedInput,
 } from '@mui/material'
 import {
   CloudUpload as UploadIcon,
@@ -103,7 +104,7 @@ const GameUpload = () => {
   const [formData, setFormData] = useState({
     name: '',
     description: '',
-    category: '',
+    category: [], // Changed to array for multiple categories
     size: '',
   })
   const [errors, setErrors] = useState({})
@@ -139,8 +140,8 @@ const GameUpload = () => {
       newErrors.description = 'Description must be at least 10 characters'
     }
 
-    if (!formData.category || formData.category === '') {
-      newErrors.category = 'Game category is required'
+    if (!formData.category || formData.category.length === 0) {
+      newErrors.category = 'At least one category is required'
     }
 
     if (!formData.size || formData.size === '') {
@@ -450,12 +451,21 @@ const GameUpload = () => {
 
                 <Grid item xs={12} md={6}>
                   <FormControl fullWidth sx={{ mb: 2 }} error={!!errors.category}>
-                    <InputLabel>Category *</InputLabel>
+                    <InputLabel>Categories *</InputLabel>
                     <Select
+                      multiple
                       value={formData.category}
-                      label="Category *"
+                      label="Categories *"
                       onChange={(e) => handleInputChange('category', e.target.value)}
                       disabled={uploading}
+                      input={<OutlinedInput label="Categories *" />}
+                      renderValue={(selected) => (
+                        <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 0.5 }}>
+                          {selected.map((value) => (
+                            <Chip key={value} label={value} size="small" />
+                          ))}
+                        </Box>
+                      )}
                     >
                       {categories.map((cat) => (
                         <MenuItem key={cat} value={cat}>
@@ -468,6 +478,9 @@ const GameUpload = () => {
                         {errors.category}
                       </Typography>
                     )}
+                    <Typography variant="caption" color="text.secondary" sx={{ mt: 0.5, ml: 2 }}>
+                      Select one or more categories
+                    </Typography>
                   </FormControl>
                 </Grid>
 

@@ -259,18 +259,38 @@ const SiteSettings = () => {
       if (uploadResponse.data.success) {
         const { url, path } = uploadResponse.data.data
         
+        console.log('📤 Upload response:', uploadResponse.data.data)
+        console.log('📝 Updating faviconUrl to:', path || url)
+        
         // Update settings with new favicon URL
-        setSettings(prev => ({
-          ...prev,
+        const updatedSettings = {
+          ...settings,
           faviconUrl: path || url
-        }))
+        }
+        
+        setSettings(updatedSettings)
 
         enqueueSnackbar('Favicon uploaded successfully!', { variant: 'success' })
         
-        // Auto-save the settings
-        setTimeout(() => {
-          handleSave()
-        }, 1000)
+        // Auto-save the settings immediately with updated data
+        try {
+          setSaving(true)
+          const saveResponse = await axios.put(
+            config.api.getFullUrl('/site-settings'),
+            updatedSettings,
+            { withCredentials: true }
+          )
+
+          if (saveResponse.data.success) {
+            console.log('✅ Settings saved to S3 with new favicon')
+            enqueueSnackbar('Favicon updated in site settings!', { variant: 'success' })
+          }
+        } catch (saveError) {
+          console.error('Error saving settings:', saveError)
+          enqueueSnackbar('Failed to save settings', { variant: 'error' })
+        } finally {
+          setSaving(false)
+        }
       }
     } catch (error) {
       console.error('Error uploading favicon:', error)
@@ -322,18 +342,38 @@ const SiteSettings = () => {
       if (uploadResponse.data.success) {
         const { url, path } = uploadResponse.data.data
         
+        console.log('📤 Upload response:', uploadResponse.data.data)
+        console.log('📝 Updating splashLogoUrl to:', path || url)
+        
         // Update settings with new splash logo URL
-        setSettings(prev => ({
-          ...prev,
+        const updatedSettings = {
+          ...settings,
           splashLogoUrl: path || url
-        }))
+        }
+        
+        setSettings(updatedSettings)
 
         enqueueSnackbar('Splash logo uploaded successfully!', { variant: 'success' })
         
-        // Auto-save the settings
-        setTimeout(() => {
-          handleSave()
-        }, 1000)
+        // Auto-save the settings immediately with updated data
+        try {
+          setSaving(true)
+          const saveResponse = await axios.put(
+            config.api.getFullUrl('/site-settings'),
+            updatedSettings,
+            { withCredentials: true }
+          )
+
+          if (saveResponse.data.success) {
+            console.log('✅ Settings saved to S3 with new splash logo')
+            enqueueSnackbar('Splash logo updated in site settings!', { variant: 'success' })
+          }
+        } catch (saveError) {
+          console.error('Error saving settings:', saveError)
+          enqueueSnackbar('Failed to save settings', { variant: 'error' })
+        } finally {
+          setSaving(false)
+        }
       }
     } catch (error) {
       console.error('Error uploading splash logo:', error)

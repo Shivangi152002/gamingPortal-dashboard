@@ -156,6 +156,15 @@ export const config = {
         statistics: '/ranking/statistics',
         recalculate: '/ranking/recalculate',
       },
+      
+      // Banners
+      banners: {
+        list: '/banners',
+        single: (id) => `/banners/${id}`,
+        create: '/banners',
+        update: (id) => `/banners/${id}`,
+        delete: (id) => `/banners/${id}`,
+      },
     },
     
     // Full URL builder helper
@@ -202,6 +211,14 @@ export const config = {
         cleanPath = cleanPath.startsWith('games/') 
           ? `public/${cleanPath}` 
           : `public/games/${cleanPath}`;
+      } else if (assetType === 'banners' && !cleanPath.startsWith('public/banners/')) {
+        cleanPath = cleanPath.startsWith('banners/') 
+          ? `public/${cleanPath}` 
+          : `public/banners/${cleanPath}`;
+      } else if (assetType === 'videos' && !cleanPath.startsWith('public/videos/')) {
+        cleanPath = cleanPath.startsWith('videos/') 
+          ? `public/${cleanPath}` 
+          : `public/videos/${cleanPath}`;
       } else if (!cleanPath.startsWith('public/')) {
         cleanPath = `public/${cleanPath}`;
       }

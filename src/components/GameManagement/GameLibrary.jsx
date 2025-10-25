@@ -245,27 +245,42 @@ const GameCard = ({ game, onEdit, onDelete, onToggleFeatured, viewMode = 'grid' 
                   <Box sx={{ 
                     display: 'flex',   
                     gap: 0.5,
-                    mb: 1.5,
-                    flexWrap: 'nowrap',
-                    overflow: 'hidden',
-                    justifyContent: viewMode === 'list' ? 'flex-start' : 'space-between',
+                    mb: 1,
+                    flexWrap: 'wrap',
+                    justifyContent: viewMode === 'list' ? 'flex-start' : 'flex-start',
                     alignItems: 'center'
                   }}>
-                    <Box sx={{ display: 'flex', gap: 0.5, flexWrap: 'nowrap' }}>
-                      {/* Rank Chip */}
-                      <Chip 
-                        label={`#${game.rank || 'N/A'}`} 
-                        size="small" 
-                        variant="filled" 
-                        color="primary"
-                        sx={{ 
-                          fontSize: 9,
-                          height: 20,
-                          minWidth: 'auto',
-                          flexShrink: 0,
-                          fontWeight: 'bold'
-                        }} 
-                      />
+                    {/* Rank Chip */}
+                    <Chip 
+                      label={`#${game.rank || 'N/A'}`} 
+                      size="small" 
+                      variant="filled" 
+                      color="primary"
+                      sx={{ 
+                        fontSize: 9,
+                        height: 20,
+                        minWidth: 'auto',
+                        flexShrink: 0,
+                        fontWeight: 'bold'
+                      }} 
+                    />
+                    {/* Category Chips - handle both array and string */}
+                    {Array.isArray(game.category) ? (
+                      game.category.map((cat, idx) => (
+                        <Chip 
+                          key={idx}
+                          label={cat} 
+                          size="small" 
+                          variant="outlined" 
+                          sx={{ 
+                            fontSize: 9,
+                            height: 20,
+                            minWidth: 'auto',
+                            flexShrink: 0
+                          }} 
+                        />
+                      ))
+                    ) : (
                       <Chip 
                         label={game.category} 
                         size="small" 
@@ -277,84 +292,85 @@ const GameCard = ({ game, onEdit, onDelete, onToggleFeatured, viewMode = 'grid' 
                           flexShrink: 0
                         }} 
                       />
+                    )}
+                    <Chip 
+                      label={game.size} 
+                      size="small" 
+                      variant="outlined" 
+                      color="secondary" 
+                      sx={{ 
+                        fontSize: 9,
+                        height: 20,
+                        minWidth: 'auto',
+                        flexShrink: 0
+                      }} 
+                    />
+                    {/* Play Count Chip */}
+                    <Chip 
+                      label={`${game.playCount || 0} plays`} 
+                      size="small" 
+                      variant="outlined" 
+                      color="success"
+                      sx={{ 
+                        fontSize: 9,
+                        height: 20,
+                        minWidth: 'auto',
+                        flexShrink: 0
+                      }} 
+                    />
+                    {game.featured && (
                       <Chip 
-                        label={game.size} 
+                        label="Featured" 
                         size="small" 
-                        variant="outlined" 
-                        color="secondary" 
+                        variant="outlined"
+                        color="warning"
                         sx={{ 
                           fontSize: 9,
                           height: 20,
                           minWidth: 'auto',
                           flexShrink: 0
-                        }} 
+                        }}
                       />
-                      {/* Play Count Chip */}
-                      <Chip 
-                        label={`${game.playCount || 0} plays`} 
-                        size="small" 
-                        variant="outlined" 
-                        color="success"
-                        sx={{ 
-                          fontSize: 9,
-                          height: 20,
-                          minWidth: 'auto',
-                          flexShrink: 0
-                        }} 
-                      />
-                      {game.featured && (
-                        <Chip 
-                          label="Featured" 
-                          size="small" 
-                          variant="outlined"
-                          color="warning"
-                          sx={{ 
-                            fontSize: 9,
-                            height: 20,
-                            minWidth: 'auto',
-                            flexShrink: 0
-                          }}
-                        />
-                      )}
-                    </Box>
-                    
-                    {viewMode === 'grid' && (
-                      <Box sx={{ display: 'flex', gap: 0.5, flexShrink: 0 }}>
-                        <IconButton
-                          sx={{
-                            backgroundColor: 'rgba(25, 118, 210, 0.9)',
-                            color: 'white',
-                            '&:hover': { backgroundColor: 'primary.main' },
-                            width: 24,
-                            height: 24
-                          }}
-                          size="small"
-                          onClick={(e) => {
-                            e.stopPropagation()
-                            onEdit(game.id)
-                          }}
-                        >
-                          <EditIcon sx={{ fontSize: 12 }} />
-                        </IconButton>
-                        <IconButton
-                          sx={{
-                            backgroundColor: 'rgba(211, 47, 47, 0.9)',
-                            color: 'white',
-                            '&:hover': { backgroundColor: 'error.main' },
-                            width: 24,
-                            height: 24
-                          }}
-                          size="small"
-                          onClick={(e) => {
-                            e.stopPropagation()
-                            onDelete(game.id)
-                          }}
-                        >
-                          <DeleteIcon sx={{ fontSize: 12 }} />
-                        </IconButton>
-                      </Box>
                     )}
                   </Box>
+                  
+                  {/* Action Buttons */}
+                  {viewMode === 'grid' && (
+                    <Box sx={{ display: 'flex', gap: 0.5, mb: 1 }}>
+                      <IconButton
+                        sx={{
+                          backgroundColor: 'rgba(25, 118, 210, 0.9)',
+                          color: 'white',
+                          '&:hover': { backgroundColor: 'primary.main' },
+                          width: 24,
+                          height: 24
+                        }}
+                        size="small"
+                        onClick={(e) => {
+                          e.stopPropagation()
+                          onEdit(game.id)
+                        }}
+                      >
+                        <EditIcon sx={{ fontSize: 12 }} />
+                      </IconButton>
+                      <IconButton
+                        sx={{
+                          backgroundColor: 'rgba(211, 47, 47, 0.9)',
+                          color: 'white',
+                          '&:hover': { backgroundColor: 'error.main' },
+                          width: 24,
+                          height: 24
+                        }}
+                        size="small"
+                        onClick={(e) => {
+                          e.stopPropagation()
+                          onDelete(game.id)
+                        }}
+                      >
+                        <DeleteIcon sx={{ fontSize: 12 }} />
+                      </IconButton>
+                    </Box>
+                  )}
                   
                   {viewMode === 'list' && (
                     <Box sx={{ display: 'flex', gap: 0.5, mt: 1 }}>

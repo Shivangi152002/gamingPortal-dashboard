@@ -47,6 +47,7 @@ export const AuthProvider = ({ children }) => {
 
   const login = async (email, password) => {
     try {
+      console.log('🔐 Attempting login...');
       // Use relative path since axios instance already has baseURL configured
       const response = await axios.post(config.api.endpoints.auth.login, {
         email,
@@ -57,6 +58,19 @@ export const AuthProvider = ({ children }) => {
         const { user } = response.data.data;
         setUser(user);
         console.log('✅ Login successful:', user);
+        
+        // Immediately verify session with /auth/me
+        console.log('🔍 Calling /api/auth/me to verify session...');
+        try {
+          const meResponse = await axios.get(config.api.endpoints.auth.me);
+          if (meResponse.data.success) {
+            setUser(meResponse.data.data.user);
+            console.log('✅ Session verified via /auth/me:', meResponse.data.data.user);
+          }
+        } catch (meError) {
+          console.error('⚠️ Failed to verify session:', meError.message);
+        }
+        
         return { success: true };
       }
     } catch (error) {

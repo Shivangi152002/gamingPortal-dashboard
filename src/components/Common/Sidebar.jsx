@@ -26,6 +26,7 @@ import {
   Settings as SettingsIcon,
   Logout as LogoutIcon,
   TrendingUp as RankingIcon,
+  ViewCarousel as BannerIcon,
 } from '@mui/icons-material'
 import { useAuth } from '../../context/AuthContext'
 
@@ -47,6 +48,7 @@ const Sidebar = ({ open, onClose, isMobile }) => {
     // { text: 'Game Editor', icon: <EditIcon />, path: '/games/editor' },
     // { text: 'Game Data (JSON)', icon: <DataIcon />, path: '/games/data-viewer' },
     { divider: true },
+    { text: 'Banner Management', icon: <BannerIcon />, path: '/banners' },
     { text: 'Site Settings', icon: <SettingsIcon />, path: '/site-settings' },
     // { text: 'S3 Manager', icon: <StorageIcon />, path: '/aws/s3' },
     // { text: 'CloudFront', icon: <CloudIcon />, path: '/aws/cloudfront' },
