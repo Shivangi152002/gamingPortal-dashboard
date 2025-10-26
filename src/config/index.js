@@ -35,7 +35,7 @@ const getEnvVar = (key, fallback = null) => {
 const envConfig = {
   // API Configuration - fully from environment with smart defaults
   api: {
-    baseUrl: getEnvVar('VITE_API_BASE_URL', isDevelopment ? '/' : '/'),
+    baseUrl: getEnvVar('VITE_API_BASE_URL', isDevelopment ? 'https://admin.gamesule.com/api' : 'https://admin.gamesule.com/api'),
     timeout: parseInt(getEnvVar('VITE_API_TIMEOUT', '30000')),
   },
   
