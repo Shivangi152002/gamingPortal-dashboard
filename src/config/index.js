@@ -35,7 +35,7 @@ const getEnvVar = (key, fallback = null) => {
 const envConfig = {
   // API Configuration - fully from environment with smart defaults
   api: {
-    baseUrl: getEnvVar('VITE_API_BASE_URL', isDevelopment ? 'http://localhost:3000/api' : 'http://localhost:3000/api'),
+    baseUrl: getEnvVar('VITE_API_BASE_URL', isDevelopment ? 'http://85.209.95.229:3000/api' : 'http://85.209.95.229:3000/api'),
     timeout: parseInt(getEnvVar('VITE_API_TIMEOUT', '30000')),
   },
   
