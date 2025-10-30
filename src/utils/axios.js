@@ -47,13 +47,17 @@ axiosInstance.interceptors.response.use(
       
       // Handle 401 Unauthorized errors
       if (error.response.status === 401) {
-        console.error('   Authentication failed - redirecting to login...');
-        
-        // If not on login page, redirect to login
-        if (!window.location.pathname.includes('/login')) {
-          setTimeout(() => {
-            window.location.href = '/login';
-          }, 1000);
+        // Do NOT hard-redirect for session probe endpoint; let app handle gracefully
+        const urlPath = (error.config?.url || '').toLowerCase();
+        if (urlPath.includes('/auth/me')) {
+          console.warn('   401 on /auth/me - skipping redirect (handled by AuthContext)');
+        } else {
+          console.error('   Authentication failed - redirecting to login...');
+          if (!window.location.pathname.includes('/login')) {
+            setTimeout(() => {
+              window.location.href = '/login';
+            }, 500);
+          }
         }
       }
     } else {

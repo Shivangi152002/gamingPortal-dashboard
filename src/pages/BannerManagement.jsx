@@ -53,12 +53,11 @@ const BannerManagement = () => {
   const [openDialog, setOpenDialog] = useState(false)
   const [editingBanner, setEditingBanner] = useState(null)
   const [uploadingFile, setUploadingFile] = useState(false)
-  const [tabValue, setTabValue] = useState(0)
   const [togglingBanner, setTogglingBanner] = useState({}) // Track which banners are being toggled
 
   const [formData, setFormData] = useState({
     position: 'left',
-    type: 'image',
+    type: '',
     title: '',
     url: '',
     content: '',
@@ -95,33 +94,42 @@ const BannerManagement = () => {
   const handleOpenDialog = (banner = null) => {
     if (banner) {
       setEditingBanner(banner)
+      // Detect type from existing banner
+      let detectedType = banner.type || 'image'
+      // Check if URL type (external URL not uploaded file)
+      if (banner.url && banner.url.startsWith('http') && !banner.url.includes('/banners/')) {
+        detectedType = 'url'
+      }
+      
       setFormData({
         position: banner.position,
-        type: banner.type,
+        type: detectedType,
         title: banner.title,
         url: banner.url || '',
         content: banner.content || '',
         link: banner.link || '',
         active: banner.active !== undefined ? banner.active : true
       })
-      setTabValue(banner.type === 'image' ? 0 : banner.type === 'video' ? 1 : 2)
       
-      // Set preview if it's a URL
+      // Set preview URL
       if (banner.url && !banner.url.startsWith('<')) {
-        setPreviewUrl(banner.url)
+        if (detectedType === 'url') {
+          setPreviewUrl(banner.url)
+        } else {
+          setPreviewUrl(banner.url.startsWith('http') ? banner.url : config.aws.getAssetUrl(banner.url, 'banners'))
+        }
       }
     } else {
       setEditingBanner(null)
       setFormData({
         position: 'left',
-        type: 'image',
+        type: '', // User must select first
         title: '',
         url: '',
         content: '',
         link: '',
         active: true
       })
-      setTabValue(0)
       setPreviewUrl(null)
     }
     setSelectedFile(null)
@@ -146,14 +154,24 @@ const BannerManagement = () => {
     }
 
     // Validate file type based on banner type
-    if (formData.type === 'image') {
+    if (formData.type === 'image' || formData.type === 'gif') {
       if (!file.type.startsWith('image/')) {
         enqueueSnackbar('Please select an image file', { variant: 'error' })
         return
       }
-    } else if (formData.type === 'video') {
+      // For GIF, validate it's actually a GIF
+      if (formData.type === 'gif' && !file.type.includes('gif')) {
+        enqueueSnackbar('Please select a GIF file', { variant: 'error' })
+        return
+      }
+    } else if (formData.type === 'mp4' || formData.type === 'video') {
       if (!file.type.startsWith('video/')) {
         enqueueSnackbar('Please select a video file', { variant: 'error' })
+        return
+      }
+      // For MP4, validate it's MP4
+      if (formData.type === 'mp4' && !file.type.includes('mp4')) {
+        enqueueSnackbar('Please select an MP4 video file', { variant: 'error' })
         return
       }
     }
@@ -168,19 +186,48 @@ const BannerManagement = () => {
     reader.readAsDataURL(file)
   }
 
+  const handleTypeChange = (newType) => {
+    setFormData(prev => ({
+      ...prev,
+      type: newType,
+      url: '',
+      content: ''
+    }))
+    setSelectedFile(null)
+    setPreviewUrl(null)
+  }
+
+  const handleUrlChange = (url) => {
+    setFormData(prev => ({ ...prev, url }))
+    // Auto-set preview for URL type
+    if (formData.type === 'url' && url) {
+      setPreviewUrl(url)
+    }
+  }
+
   const handleSaveBanner = async () => {
-    if (!editingBanner) {
-      enqueueSnackbar('No banner selected for editing', { variant: 'error' })
+    // Validation
+    if (!formData.type) {
+      enqueueSnackbar('Please select a banner type first', { variant: 'error' })
       return
     }
 
-    // Validation
     if (!formData.title.trim()) {
       enqueueSnackbar('Please enter a banner title', { variant: 'error' })
       return
     }
 
-    // For code type, we need HTML content
+    // Type-specific validation
+    if (formData.type === 'url' && !formData.url.trim()) {
+      enqueueSnackbar('Please enter a valid URL', { variant: 'error' })
+      return
+    }
+
+    if ((formData.type === 'image' || formData.type === 'gif' || formData.type === 'mp4') && !selectedFile && !formData.url) {
+      enqueueSnackbar(`Please upload a ${formData.type.toUpperCase()} file or enter URL`, { variant: 'error' })
+      return
+    }
+
     if (formData.type === 'code' && !formData.content.trim()) {
       enqueueSnackbar('Please enter HTML code', { variant: 'error' })
       return
@@ -191,6 +238,14 @@ const BannerManagement = () => {
 
       let fileUrl = formData.url
       let fileContent = formData.content
+      
+      // Normalize type for backend (image/gif -> image, mp4 -> video)
+      let backendType = formData.type
+      if (formData.type === 'gif') {
+        backendType = 'image'
+      } else if (formData.type === 'mp4') {
+        backendType = 'video'
+      }
 
       // Upload file if a new one is selected
       if (selectedFile) {
@@ -219,7 +274,7 @@ const BannerManagement = () => {
       // Prepare banner data
       const bannerData = {
         position: formData.position,
-        type: formData.type,
+        type: backendType,
         title: formData.title,
         url: formData.type === 'code' ? fileContent : fileUrl,
         content: formData.type === 'code' ? fileContent : '',
@@ -227,21 +282,31 @@ const BannerManagement = () => {
         active: formData.active
       }
 
-      // Update existing banner
-      const response = await axios.put(
-        config.api.getFullUrl(config.api.endpoints.banners.update(editingBanner.id)),
-        bannerData,
-        { withCredentials: true }
-      )
+      let response
+      if (editingBanner) {
+        // Update existing banner
+        response = await axios.put(
+          config.api.getFullUrl(config.api.endpoints.banners.update(editingBanner.id)),
+          bannerData,
+          { withCredentials: true }
+        )
+      } else {
+        // Create new banner
+        response = await axios.post(
+          config.api.getFullUrl(config.api.endpoints.banners.create),
+          bannerData,
+          { withCredentials: true }
+        )
+      }
 
       if (response.data.success) {
-        enqueueSnackbar('Banner updated successfully!', { variant: 'success' })
+        enqueueSnackbar(`Banner ${editingBanner ? 'updated' : 'created'} successfully!`, { variant: 'success' })
         fetchBanners()
         handleCloseDialog()
       }
     } catch (error) {
-      console.error('Error updating banner:', error)
-      enqueueSnackbar(error.response?.data?.message || 'Failed to update banner', { variant: 'error' })
+      console.error('Error saving banner:', error)
+      enqueueSnackbar(error.response?.data?.message || `Failed to ${editingBanner ? 'update' : 'create'} banner`, { variant: 'error' })
     } finally {
       setUploadingFile(false)
     }
@@ -313,26 +378,39 @@ const BannerManagement = () => {
     }
   }
 
-  const handleTabChange = (event, newValue) => {
-    setTabValue(newValue)
-    setFormData(prev => ({
-      ...prev,
-      type: newValue === 0 ? 'image' : newValue === 1 ? 'video' : 'code'
-    }))
-    setSelectedFile(null)
-    setPreviewUrl(null)
-  }
-
   const getBannerIcon = (type) => {
     switch (type) {
       case 'image':
+      case 'gif':
         return <ImageIcon />
       case 'video':
+      case 'mp4':
         return <VideoIcon />
       case 'code':
         return <CodeIcon />
+      case 'url':
+        return <LinkIcon />
       default:
         return <BannerIcon />
+    }
+  }
+
+  const getTypeLabel = (type) => {
+    switch (type) {
+      case 'url':
+        return 'External URL'
+      case 'image':
+        return 'Image'
+      case 'gif':
+        return 'GIF'
+      case 'mp4':
+        return 'MP4 Video'
+      case 'video':
+        return 'Video'
+      case 'code':
+        return 'HTML Code'
+      default:
+        return type
     }
   }
 
@@ -361,6 +439,14 @@ const BannerManagement = () => {
             Manage advertising banners for your gaming portal
           </Typography>
         </Box>
+        <Button
+          variant="contained"
+          startIcon={<AddIcon />}
+          onClick={() => handleOpenDialog()}
+          sx={{ ml: 2 }}
+        >
+          Add New Banner
+        </Button>
       </Box>
 
       {/* Banner Statistics */}
@@ -431,8 +517,8 @@ const BannerManagement = () => {
           {banners.map((banner) => (
             <Grid item xs={12} md={6} lg={4} key={banner.id}>
               <Card elevation={2} sx={{ height: '100%', display: 'flex', flexDirection: 'column' }}>
-                {/* Image Banner Preview */}
-                {banner.type === 'image' && banner.url && (
+                {/* Image/GIF/URL Banner Preview */}
+                {(banner.type === 'image' || banner.type === 'gif') && banner.url && (
                   <CardMedia
                     component="img"
                     height="200"
@@ -445,14 +531,26 @@ const BannerManagement = () => {
                     }}
                   />
                 )}
-                {banner.type === 'image' && !banner.url && (
+                {banner.type === 'url' && banner.url && banner.url.startsWith('http') && (
+                  <CardMedia
+                    component="img"
+                    height="200"
+                    image={banner.url}
+                    alt={banner.title}
+                    sx={{ objectFit: 'cover', backgroundColor: '#f5f5f5' }}
+                    onError={(e) => {
+                      e.target.parentElement.innerHTML = '<div style="height:200px;background:#f5f5f5;display:flex;align-items:center;justify-content:center;"><LinkIcon style="fontSize:48;color:#999" /></div>'
+                    }}
+                  />
+                )}
+                {(banner.type === 'image' || banner.type === 'gif' || banner.type === 'url') && !banner.url && (
                   <Box sx={{ height: 200, backgroundColor: '#f5f5f5', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                    <ImageIcon sx={{ fontSize: 48, color: 'text.disabled', mb: 1 }} />
+                    <ImageIcon sx={{ fontSize: 48, color: 'text.disabled' }} />
                   </Box>
                 )}
                 
-                {/* Video Banner Preview */}
-                {banner.type === 'video' && banner.url && (
+                {/* Video/MP4 Banner Preview */}
+                {(banner.type === 'video' || banner.type === 'mp4') && banner.url && (
                   <Box sx={{ height: 200, backgroundColor: '#000', position: 'relative' }}>
                     <video
                       src={banner.url.startsWith('http') ? banner.url : config.aws.getAssetUrl(banner.url, 'videos')}
@@ -468,7 +566,7 @@ const BannerManagement = () => {
                     </Box>
                   </Box>
                 )}
-                {banner.type === 'video' && !banner.url && (
+                {(banner.type === 'video' || banner.type === 'mp4') && !banner.url && (
                   <Box sx={{ height: 200, backgroundColor: '#000', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
                     <VideoIcon sx={{ fontSize: 48, color: 'grey.700' }} />
                   </Box>
@@ -566,136 +664,373 @@ const BannerManagement = () => {
         </Grid>
       )}
 
-      {/* Edit Banner Dialog */}
+      {/* Add/Edit Banner Dialog */}
       <Dialog open={openDialog} onClose={handleCloseDialog} maxWidth="md" fullWidth>
         <DialogTitle>
-          Update Banner
+          {editingBanner ? 'Update Banner' : 'Add New Banner'}
         </DialogTitle>
         <DialogContent>
           <Box sx={{ pt: 2 }}>
-            {/* Banner Type Display (Read-only) */}
-            <Box sx={{ mb: 3, p: 2, backgroundColor: 'grey.100', borderRadius: 1 }}>
-              <Typography variant="body2" color="text.secondary" gutterBottom>
-                Banner Type
-              </Typography>
-              <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                {formData.type === 'image' && <ImageIcon color="primary" />}
-                {formData.type === 'video' && <VideoIcon color="primary" />}
-                {formData.type === 'code' && <CodeIcon color="primary" />}
-                <Typography variant="body1" sx={{ fontWeight: 600, textTransform: 'capitalize' }}>
-                  {formData.type === 'image' ? 'Image/GIF' : formData.type === 'video' ? 'Video' : 'HTML Code'}
-                </Typography>
-              </Box>
-            </Box>
-
-            <Divider sx={{ mb: 3 }} />
-
             <Grid container spacing={2}>
-              {/* Title */}
+              {/* Step 1: Banner Type Selection */}
               <Grid item xs={12}>
-                <TextField
-                  fullWidth
-                  label="Banner Title"
-                  value={formData.title}
-                  onChange={(e) => setFormData({ ...formData, title: e.target.value })}
-                  required
-                />
-              </Grid>
-
-              {/* Position (Read-only) */}
-              <Grid item xs={12}>
-                <TextField
-                  fullWidth
-                  label="Position"
-                  value={formData.position.charAt(0).toUpperCase() + formData.position.slice(1) + ' Banner'}
-                  disabled
-                  helperText="Position cannot be changed"
-                />
-              </Grid>
-
-              {/* File Upload (for Image and Video) */}
-              {(formData.type === 'image' || formData.type === 'video') && (
-                <>
-                  <Grid item xs={12}>
-                    <Button
-                      variant="outlined"
-                      component="label"
-                      startIcon={<UploadIcon />}
-                      fullWidth
-                    >
-                      Upload New {formData.type === 'image' ? 'Image/GIF' : 'Video'}
-                      <input
-                        type="file"
-                        hidden
-                        accept={formData.type === 'image' ? 'image/*' : 'video/*'}
-                        onChange={handleFileSelect}
-                      />
-                    </Button>
-                    {selectedFile && (
-                      <Typography variant="caption" color="text.secondary" sx={{ display: 'block', mt: 1 }}>
-                        Selected: {selectedFile.name} ({(selectedFile.size / 1024 / 1024).toFixed(2)} MB)
-                      </Typography>
-                    )}
-                    <Typography variant="caption" color="text.secondary" sx={{ display: 'block', mt: 1 }}>
-                      Leave empty to keep existing file
-                    </Typography>
-                  </Grid>
-                </>
-              )}
-
-              {/* HTML Code (for Code type) */}
-              {formData.type === 'code' && (
-                <Grid item xs={12}>
-                  <TextField
-                    fullWidth
-                    multiline
-                    rows={8}
-                    label="HTML Code"
-                    value={formData.content}
-                    onChange={(e) => setFormData({ ...formData, content: e.target.value })}
-                    placeholder="<div>Your HTML code here...</div>"
-                    required
-                  />
+                <FormControl fullWidth required>
+                  <InputLabel>Banner Type</InputLabel>
+                  <Select
+                    value={formData.type}
+                    label="Banner Type"
+                    onChange={(e) => handleTypeChange(e.target.value)}
+                  >
+                    <MenuItem value="url">
+                      <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                        <LinkIcon />
+                        External URL
+                      </Box>
+                    </MenuItem>
+                    <MenuItem value="image">
+                      <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                        <ImageIcon />
+                        Image (JPG/PNG)
+                      </Box>
+                    </MenuItem>
+                    <MenuItem value="gif">
+                      <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                        <ImageIcon />
+                        GIF Animation
+                      </Box>
+                    </MenuItem>
+                    <MenuItem value="mp4">
+                      <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                        <VideoIcon />
+                        MP4 Video
+                      </Box>
+                    </MenuItem>
+                    <MenuItem value="code">
+                      <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                        <CodeIcon />
+                        HTML Code
+                      </Box>
+                    </MenuItem>
+                  </Select>
+                </FormControl>
+                {!formData.type && (
                   <Typography variant="caption" color="text.secondary" sx={{ display: 'block', mt: 1 }}>
-                    Use responsive CSS (width:100%, height:100%) for best results
+                    Please select a banner type first
                   </Typography>
-                </Grid>
-              )}
-
-              {/* Link */}
-              <Grid item xs={12}>
-                <TextField
-                  fullWidth
-                  label="Click Target URL"
-                  value={formData.link}
-                  onChange={(e) => setFormData({ ...formData, link: e.target.value })}
-                  placeholder="https://example.com"
-                />
+                )}
               </Grid>
 
-              {/* Preview */}
-              {previewUrl && (
-                <Grid item xs={12}>
-                  <Typography variant="body2" sx={{ mb: 1, fontWeight: 600 }}>
-                    Preview:
-                  </Typography>
+              {/* Step 2: Show fields based on selected type */}
+              {formData.type && (
+                <>
+                  {/* Title - Always show */}
+                  <Grid item xs={12}>
+                    <TextField
+                      fullWidth
+                      label="Banner Title"
+                      value={formData.title}
+                      onChange={(e) => setFormData({ ...formData, title: e.target.value })}
+                      required
+                      placeholder="Enter banner title"
+                    />
+                  </Grid>
+
+                  {/* Position Selection - Only for new banners */}
+                  {!editingBanner && (
+                    <Grid item xs={12}>
+                      <FormControl fullWidth required>
+                        <InputLabel>Banner Position</InputLabel>
+                        <Select
+                          value={formData.position}
+                          label="Banner Position"
+                          onChange={(e) => setFormData({ ...formData, position: e.target.value })}
+                        >
+                          <MenuItem value="left">Left Sidebar</MenuItem>
+                          <MenuItem value="right">Right Sidebar</MenuItem>
+                          <MenuItem value="bottom">Bottom Banner</MenuItem>
+                        </Select>
+                      </FormControl>
+                    </Grid>
+                  )}
+
+                  {/* Position Display - For editing */}
+                  {editingBanner && (
+                    <Grid item xs={12}>
+                      <TextField
+                        fullWidth
+                        label="Position"
+                        value={formData.position.charAt(0).toUpperCase() + formData.position.slice(1) + ' Banner'}
+                        disabled
+                        helperText="Position cannot be changed"
+                      />
+                    </Grid>
+                  )}
+
+                  {/* URL Input for 'url' type */}
+                  {formData.type === 'url' && (
+                    <Grid item xs={12}>
+                      <TextField
+                        fullWidth
+                        label="External Image/Video URL"
+                        value={formData.url}
+                        onChange={(e) => handleUrlChange(e.target.value)}
+                        placeholder="https://example.com/image.jpg or https://example.com/video.mp4"
+                        required
+                        helperText="Enter full URL to an image or video"
+                      />
+                    </Grid>
+                  )}
+
+                  {/* File Upload for Image */}
                   {formData.type === 'image' && (
-                    <Box
-                      component="img"
-                      src={previewUrl}
-                      alt="Preview"
-                      sx={{ maxWidth: '100%', maxHeight: 300, borderRadius: 1 }}
-                    />
+                    <Grid item xs={12}>
+                      <Button
+                        variant="outlined"
+                        component="label"
+                        startIcon={<UploadIcon />}
+                        fullWidth
+                        sx={{ mb: 1 }}
+                      >
+                        Upload Image (JPG/PNG)
+                        <input
+                          type="file"
+                          hidden
+                          accept="image/jpeg,image/png,image/jpg"
+                          onChange={handleFileSelect}
+                        />
+                      </Button>
+                      {selectedFile && (
+                        <Typography variant="caption" color="text.secondary" sx={{ display: 'block', mb: 1 }}>
+                          Selected: {selectedFile.name} ({(selectedFile.size / 1024 / 1024).toFixed(2)} MB)
+                        </Typography>
+                      )}
+                      {!editingBanner && (
+                        <TextField
+                          fullWidth
+                          label="Or Enter Image URL (Optional)"
+                          value={formData.url}
+                          onChange={(e) => handleUrlChange(e.target.value)}
+                          placeholder="https://example.com/image.jpg"
+                          sx={{ mt: 1 }}
+                        />
+                      )}
+                      {editingBanner && !selectedFile && (
+                        <Typography variant="caption" color="text.secondary" sx={{ display: 'block', mt: 1 }}>
+                          Leave empty to keep existing file
+                        </Typography>
+                      )}
+                    </Grid>
                   )}
-                  {formData.type === 'video' && (
-                    <Box
-                      component="video"
-                      src={previewUrl}
-                      controls
-                      sx={{ maxWidth: '100%', maxHeight: 300, borderRadius: 1 }}
-                    />
+
+                  {/* File Upload for GIF */}
+                  {formData.type === 'gif' && (
+                    <Grid item xs={12}>
+                      <Button
+                        variant="outlined"
+                        component="label"
+                        startIcon={<UploadIcon />}
+                        fullWidth
+                        sx={{ mb: 1 }}
+                      >
+                        Upload GIF Animation
+                        <input
+                          type="file"
+                          hidden
+                          accept="image/gif"
+                          onChange={handleFileSelect}
+                        />
+                      </Button>
+                      {selectedFile && (
+                        <Typography variant="caption" color="text.secondary" sx={{ display: 'block', mb: 1 }}>
+                          Selected: {selectedFile.name} ({(selectedFile.size / 1024 / 1024).toFixed(2)} MB)
+                        </Typography>
+                      )}
+                      {!editingBanner && (
+                        <TextField
+                          fullWidth
+                          label="Or Enter GIF URL (Optional)"
+                          value={formData.url}
+                          onChange={(e) => handleUrlChange(e.target.value)}
+                          placeholder="https://example.com/animation.gif"
+                          sx={{ mt: 1 }}
+                        />
+                      )}
+                      {editingBanner && !selectedFile && (
+                        <Typography variant="caption" color="text.secondary" sx={{ display: 'block', mt: 1 }}>
+                          Leave empty to keep existing file
+                        </Typography>
+                      )}
+                    </Grid>
                   )}
-                </Grid>
+
+                  {/* File Upload for MP4 */}
+                  {formData.type === 'mp4' && (
+                    <Grid item xs={12}>
+                      <Button
+                        variant="outlined"
+                        component="label"
+                        startIcon={<UploadIcon />}
+                        fullWidth
+                        sx={{ mb: 1 }}
+                      >
+                        Upload MP4 Video
+                        <input
+                          type="file"
+                          hidden
+                          accept="video/mp4"
+                          onChange={handleFileSelect}
+                        />
+                      </Button>
+                      {selectedFile && (
+                        <Typography variant="caption" color="text.secondary" sx={{ display: 'block', mb: 1 }}>
+                          Selected: {selectedFile.name} ({(selectedFile.size / 1024 / 1024).toFixed(2)} MB)
+                        </Typography>
+                      )}
+                      {!editingBanner && (
+                        <TextField
+                          fullWidth
+                          label="Or Enter Video URL (Optional)"
+                          value={formData.url}
+                          onChange={(e) => handleUrlChange(e.target.value)}
+                          placeholder="https://example.com/video.mp4"
+                          sx={{ mt: 1 }}
+                        />
+                      )}
+                      {editingBanner && !selectedFile && (
+                        <Typography variant="caption" color="text.secondary" sx={{ display: 'block', mt: 1 }}>
+                          Leave empty to keep existing file
+                        </Typography>
+                      )}
+                    </Grid>
+                  )}
+
+                  {/* HTML Code for 'code' type */}
+                  {formData.type === 'code' && (
+                    <Grid item xs={12}>
+                      <TextField
+                        fullWidth
+                        multiline
+                        rows={8}
+                        label="HTML Code"
+                        value={formData.content}
+                        onChange={(e) => setFormData({ ...formData, content: e.target.value })}
+                        placeholder="<div style='width:100%;height:100%;'>Your HTML code here...</div>"
+                        required
+                      />
+                      <Typography variant="caption" color="text.secondary" sx={{ display: 'block', mt: 1 }}>
+                        Use responsive CSS (width:100%, height:100%) for best results
+                      </Typography>
+                    </Grid>
+                  )}
+
+                  {/* Click Target URL - Always show */}
+                  <Grid item xs={12}>
+                    <TextField
+                      fullWidth
+                      label="Click Target URL"
+                      value={formData.link}
+                      onChange={(e) => setFormData({ ...formData, link: e.target.value })}
+                      placeholder="https://example.com (leave blank for no link)"
+                      helperText="Where to redirect when banner is clicked"
+                    />
+                  </Grid>
+
+                  {/* Active Toggle */}
+                  <Grid item xs={12}>
+                    <FormControlLabel
+                      control={
+                        <Switch
+                          checked={formData.active}
+                          onChange={(e) => setFormData({ ...formData, active: e.target.checked })}
+                        />
+                      }
+                      label="Active"
+                    />
+                  </Grid>
+
+                  {/* Preview Card */}
+                  {(previewUrl || (formData.type === 'url' && formData.url) || (formData.type === 'code' && formData.content)) && (
+                    <Grid item xs={12}>
+                      <Paper elevation={2} sx={{ p: 2, mt: 2 }}>
+                        <Typography variant="body2" sx={{ mb: 2, fontWeight: 600 }}>
+                          Preview:
+                        </Typography>
+                        <Box sx={{ 
+                          height: 200, 
+                          backgroundColor: formData.type === 'code' ? '#f5f5f5' : '#000',
+                          borderRadius: 1,
+                          overflow: 'hidden',
+                          position: 'relative'
+                        }}>
+                          {/* Image/GIF/URL Preview */}
+                          {(formData.type === 'image' || formData.type === 'gif' || formData.type === 'url') && (previewUrl || formData.url) && (
+                            <Box
+                              component="img"
+                              src={previewUrl || formData.url}
+                              alt="Preview"
+                              sx={{ 
+                                width: '100%', 
+                                height: '100%', 
+                                objectFit: 'cover' 
+                              }}
+                              onError={(e) => {
+                                e.target.style.display = 'none'
+                                e.target.parentElement.innerHTML = '<div style="height:200px;display:flex;align-items:center;justify-content:center;color:#999;">Preview not available</div>'
+                              }}
+                            />
+                          )}
+                          
+                          {/* Video/MP4 Preview */}
+                          {(formData.type === 'mp4' || formData.type === 'video') && (previewUrl || formData.url) && (
+                            <Box
+                              component="video"
+                              src={previewUrl || formData.url}
+                              controls
+                              muted
+                              sx={{ 
+                                width: '100%', 
+                                height: '100%', 
+                                objectFit: 'cover' 
+                              }}
+                              onError={(e) => {
+                                e.target.style.display = 'none'
+                                e.target.parentElement.innerHTML = '<div style="height:200px;display:flex;align-items:center;justify-content:center;color:#999;">Preview not available</div>'
+                              }}
+                            />
+                          )}
+                          
+                          {/* Code Preview */}
+                          {formData.type === 'code' && formData.content && (
+                            <Box
+                              sx={{ 
+                                height: '100%',
+                                overflow: 'auto',
+                                p: 1
+                              }}
+                              dangerouslySetInnerHTML={{ __html: formData.content }}
+                            />
+                          )}
+                          
+                          {/* No Preview */}
+                          {!previewUrl && !formData.url && formData.type !== 'code' && (
+                            <Box sx={{ 
+                              height: '100%', 
+                              display: 'flex', 
+                              alignItems: 'center', 
+                              justifyContent: 'center',
+                              color: 'text.secondary'
+                            }}>
+                              {getBannerIcon(formData.type)}
+                              <Typography variant="body2" sx={{ ml: 1 }}>
+                                No preview available
+                              </Typography>
+                            </Box>
+                          )}
+                        </Box>
+                      </Paper>
+                    </Grid>
+                  )}
+                </>
               )}
             </Grid>
           </Box>
@@ -705,10 +1040,10 @@ const BannerManagement = () => {
           <Button
             variant="contained"
             onClick={handleSaveBanner}
-            disabled={uploadingFile}
+            disabled={uploadingFile || !formData.type}
             startIcon={uploadingFile ? <CircularProgress size={20} /> : null}
           >
-            {uploadingFile ? 'Updating...' : 'Update Banner'}
+            {uploadingFile ? (editingBanner ? 'Updating...' : 'Creating...') : (editingBanner ? 'Update Banner' : 'Create Banner')}
           </Button>
         </DialogActions>
       </Dialog>
