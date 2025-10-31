@@ -165,6 +165,15 @@ export const config = {
         update: (id) => `/banners/${id}`,
         delete: (id) => `/banners/${id}`,
       },
+      
+      // About
+      about: {
+        list: '/about',
+        single: (id) => `/about/${id}`,
+        create: '/about',
+        update: (id) => `/about/${id}`,
+        delete: (id) => `/about/${id}`,
+      },
     },
     
     // Full URL builder helper
