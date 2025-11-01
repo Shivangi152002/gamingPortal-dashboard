@@ -47,8 +47,10 @@ const envConfig = {
   },
   
   // AWS Configuration - fully from environment
+  // Using S3 direct (CloudFront pending verification)
+  // TODO: Switch to CloudFront when verified: 'https://dXXXXX.cloudfront.net'
   aws: {
-    cloudFrontUrl: getEnvVar('VITE_CLOUDFRONT_URL', 'https://d1xtpep1y73br3.cloudfront.net'),
+    cloudFrontUrl: getEnvVar('VITE_CLOUDFRONT_URL', 'https://gameportal-assets.s3.us-east-1.amazonaws.com'), // S3 direct
     region: getEnvVar('VITE_AWS_REGION', 'us-east-1'),
   },
   

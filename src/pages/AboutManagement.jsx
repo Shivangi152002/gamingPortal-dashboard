@@ -61,7 +61,8 @@ const AboutManagement = () => {
     description: '',
     logo: '',
     hidden: false,
-    sections: []
+    sections: [],
+    categories: []
   })
 
   const [sectionForm, setSectionForm] = useState({
@@ -110,7 +111,8 @@ const AboutManagement = () => {
         description: aboutInfo.description,
         logo: aboutInfo.logo,
         hidden: aboutInfo.hidden,
-        sections: aboutInfo.sections || []
+        sections: aboutInfo.sections || [],
+        categories: aboutInfo.categories || []
       })
       if (aboutInfo.logo) {
         setPreviewUrl(config.aws.getAssetUrl(aboutInfo.logo, 'images'))
@@ -126,7 +128,8 @@ const AboutManagement = () => {
         description: '',
         logo: '',
         hidden: false,
-        sections: []
+        sections: [],
+        categories: []
       })
     }
     setSelectedFile(null)
@@ -209,7 +212,8 @@ const AboutManagement = () => {
         description: formData.description,
         logo: logoUrl,
         hidden: formData.hidden,
-        sections: formData.sections
+        sections: formData.sections,
+        categories: formData.categories || []
       }
 
       let response
@@ -540,6 +544,15 @@ const AboutManagement = () => {
                         </Typography>
                       )}
                       
+                      {/* Categories Display */}
+                      {aboutInfo.categories && aboutInfo.categories.length > 0 && (
+                        <Box sx={{ mb: 2, display: 'flex', gap: 0.5, flexWrap: 'wrap' }}>
+                          {aboutInfo.categories.map((cat, idx) => (
+                            <Chip key={idx} label={cat} size="small" variant="outlined" />
+                          ))}
+                        </Box>
+                      )}
+                      
                       {/* Sections Preview */}
                       {aboutInfo.sections && aboutInfo.sections.length > 0 && (
                         <Box>
@@ -654,6 +667,19 @@ const AboutManagement = () => {
                   label="Description"
                   value={formData.description}
                   onChange={(e) => setFormData({ ...formData, description: e.target.value })}
+                />
+              </Grid>
+              <Grid item xs={12}>
+                <TextField
+                  fullWidth
+                  label="Categories (comma separated)"
+                  value={formData.categories?.join(', ') || ''}
+                  onChange={(e) => setFormData({ 
+                    ...formData, 
+                    categories: e.target.value.split(',').map(c => c.trim()).filter(c => c) 
+                  })}
+                  placeholder="PUZZLE GAMES, ARCADE GAMES, POPULAR GAMES"
+                  helperText="Enter game categories separated by commas"
                 />
               </Grid>
               <Grid item xs={12}>
