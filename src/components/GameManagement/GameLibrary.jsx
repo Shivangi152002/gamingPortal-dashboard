@@ -40,15 +40,14 @@ import { useNavigate } from 'react-router-dom'
 import { useSnackbar } from 'notistack'
 import axios from '../../utils/axios'
 import { config } from '../../config'
-import { getThumbnailUrl, getImageUrl as getApiImageUrl, handleImageError as apiHandleImageError, getGamePlayUrl } from '../../utils/apiConfig'
 
-// Helper function to get full image URL from S3 path using your API config
+// Helper function to get full image URL from S3 path
 const getImageUrl = (imagePath) => {
   console.log('🖼️ getImageUrl called with:', imagePath);
   
   if (!imagePath) {
     console.log('❌ No imagePath provided, using placeholder');
-    // Return a data URI placeholder instead of external URL
+    // Return a data URI placeholder
     const svg = `<svg width="300" height="200" xmlns="http://www.w3.org/2000/svg">
       <rect width="100%" height="100%" fill="#cccccc"/>
       <text x="50%" y="50%" font-family="Arial" font-size="16" fill="#666666" text-anchor="middle" dy=".3em">No Image</text>
@@ -62,27 +61,32 @@ const getImageUrl = (imagePath) => {
     return imagePath;
   }
   
-  // Use your API config system for thumbnails
-  const thumbnailUrl = getThumbnailUrl(imagePath);
-  const imageUrl = getApiImageUrl(imagePath);
-  const finalUrl = thumbnailUrl || imageUrl;
+  // Use dashboard config system for thumbnails
+  const finalUrl = config.aws.getAssetUrl(imagePath, 'thumbnail');
   
   console.log('🔧 URL construction:', {
     original: imagePath,
-    thumbnailUrl,
-    imageUrl,
     finalUrl
   });
   
   return finalUrl;
 }
 
-// Helper function to get game play URL using your API config
+// Helper function to get game play URL
 const getGameUrl = (playUrl) => {
   if (!playUrl) return '#'
   
-  // Use your API config system for game URLs
-  return getGamePlayUrl(playUrl) || '#'
+  // Use dashboard config system for game URLs
+  const finalUrl = config.aws.getAssetUrl(playUrl, 'game');
+  
+  // Add /index.html if it's a folder
+  if (finalUrl && finalUrl.endsWith('/')) {
+    return finalUrl + 'index.html';
+  } else if (finalUrl && !finalUrl.match(/\.(html|htm)$/i)) {
+    return finalUrl + '/index.html';
+  }
+  
+  return finalUrl || '#';
 }
 
 const GameCard = ({ game, onEdit, onDelete, onToggleFeatured, viewMode = 'grid' }) => {
@@ -147,7 +151,15 @@ const GameCard = ({ game, onEdit, onDelete, onToggleFeatured, viewMode = 'grid' 
             minWidth: viewMode === 'list' ? 120 : 200,
             minHeight: viewMode === 'list' ? 120 : 200
           }}
-          onError={(e) => apiHandleImageError(e)}
+          onError={(e) => {
+            console.warn('Image failed to load:', e.target.src);
+            e.target.onerror = null; // Prevent infinite loop
+            const svg = `<svg width="300" height="200" xmlns="http://www.w3.org/2000/svg">
+              <rect width="100%" height="100%" fill="#f0f0f0"/>
+              <text x="50%" y="50%" font-family="Arial" font-size="14" fill="#999" text-anchor="middle" dy=".3em">Image Error</text>
+            </svg>`;
+            e.target.src = `data:image/svg+xml;base64,${btoa(svg)}`;
+          }}
         />
         {/* Floating Action Buttons */}
         {/* <Box sx={{ 

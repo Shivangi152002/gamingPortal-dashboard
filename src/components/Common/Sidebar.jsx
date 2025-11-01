@@ -28,6 +28,7 @@ import {
   TrendingUp as RankingIcon,
   ViewCarousel as BannerIcon,
   Info as InfoIcon,
+  Category as CategoryIcon,
 } from '@mui/icons-material'
 import { useAuth } from '../../context/AuthContext'
 
@@ -51,6 +52,7 @@ const Sidebar = ({ open, onClose, isMobile }) => {
     { divider: true },
     { text: 'Banner Management', icon: <BannerIcon />, path: '/banners' },
     { text: 'About Management', icon: <InfoIcon />, path: '/about' },
+    { text: 'Category Filters', icon: <CategoryIcon />, path: '/category-filters' },
     { text: 'Site Settings', icon: <SettingsIcon />, path: '/site-settings' },
     // { text: 'S3 Manager', icon: <StorageIcon />, path: '/aws/s3' },
     // { text: 'CloudFront', icon: <CloudIcon />, path: '/aws/cloudfront' },

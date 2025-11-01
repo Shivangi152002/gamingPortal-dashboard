@@ -10,6 +10,7 @@ import UserManagement from './pages/UserManagement'
 import SiteSettings from './pages/SiteSettings'
 import BannerManagement from './pages/BannerManagement'
 import AboutManagement from './pages/AboutManagement'
+import CategoryFilterManagement from './pages/CategoryFilterManagement'
 import Login from './pages/Login'
 import ErrorBoundary from './components/Common/ErrorBoundary'
 import { AuthProvider, useAuth } from './context/AuthContext'
@@ -46,6 +47,7 @@ function AppRoutes() {
           <Route path="site-settings" element={<SiteSettings />} />
           <Route path="banners" element={<BannerManagement />} />
           <Route path="about" element={<AboutManagement />} />
+          <Route path="category-filters" element={<CategoryFilterManagement />} />
           <Route path="*" element={<Navigate to="/dashboard" replace />} />
         </Route>
       </Routes>

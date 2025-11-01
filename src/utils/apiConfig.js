@@ -10,10 +10,9 @@
  * import { getAssetUrl, getThumbnailUrl, getGifUrl, getGamePlayUrl } from '@/utils/apiConfig';
  */
 
-// Get CloudFront URL from environment variable
-// Using S3 direct (CloudFront pending verification)
-// TODO: Switch to CloudFront when verified: 'https://dXXXXX.cloudfront.net'
-const CLOUDFRONT_URL = import.meta.env.VITE_CLOUDFRONT_URL || 'https://gameportal-assets.s3.us-east-1.amazonaws.com'; // S3 direct
+// HARDCODED S3 DIRECT URL - Using S3 direct for both development and production
+// CloudFront disabled - IGNORES .env file
+const CLOUDFRONT_URL = 'https://gameportal-assets.s3.us-east-1.amazonaws.com'; // S3 direct HARDCODED
 
 export const API_CONFIG = {
   // CloudFront direct URL (for all asset URLs)

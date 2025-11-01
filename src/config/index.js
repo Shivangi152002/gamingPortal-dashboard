@@ -46,12 +46,12 @@ const envConfig = {
     description: getEnvVar('VITE_APP_DESCRIPTION', 'Complete game management system with AWS integration'),
   },
   
-  // AWS Configuration - fully from environment
-  // Using S3 direct (CloudFront pending verification)
-  // TODO: Switch to CloudFront when verified: 'https://dXXXXX.cloudfront.net'
+  // AWS Configuration - HARDCODED S3 DIRECT URL
+  // Using S3 direct for both development and production
+  // CloudFront DISABLED - Always use S3 direct URL (ignores .env)
   aws: {
-    cloudFrontUrl: getEnvVar('VITE_CLOUDFRONT_URL', 'https://gameportal-assets.s3.us-east-1.amazonaws.com'), // S3 direct
-    region: getEnvVar('VITE_AWS_REGION', 'us-east-1'),
+    cloudFrontUrl: 'https://gameportal-assets.s3.us-east-1.amazonaws.com', // S3 direct HARDCODED
+    region: 'us-east-1',
   },
   
   // Feature Flags - from environment
@@ -175,6 +175,16 @@ export const config = {
         create: '/about',
         update: (id) => `/about/${id}`,
         delete: (id) => `/about/${id}`,
+      },
+      
+      // Category Filters
+      categoryFilters: {
+        list: '/category-filters',
+        single: (id) => `/category-filters/${id}`,
+        create: '/category-filters',
+        update: (id) => `/category-filters/${id}`,
+        delete: (id) => `/category-filters/${id}`,
+        reorder: '/category-filters/reorder',
       },
     },
     
