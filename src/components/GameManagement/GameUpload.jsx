@@ -248,6 +248,17 @@ const GameUpload = () => {
 
       const uploadData = await uploadResponse.json()
       setUploadProgress(60)
+      
+      // Show warnings if any problematic filenames detected
+      if (uploadData.warnings && uploadData.warnings.length > 0) {
+        uploadData.warnings.forEach(warning => {
+          console.warn('⚠️ File naming issue:', warning);
+          enqueueSnackbar(
+            `${warning.file}: ${warning.issues.join(', ')}. ${warning.suggestion}`,
+            { variant: 'warning', autoHideDuration: 8000 }
+          );
+        });
+      }
 
       // Step 2: Create game entry with new format
       const slug = formData.name.toLowerCase().replace(/[^a-z0-9]/g, '-').replace(/-+/g, '-').replace(/^-|-$/g, '')
@@ -405,8 +416,11 @@ const GameUpload = () => {
               </Grid>
 
               <Box sx={{ mt: 3, p: 2, bgcolor: 'info.light', borderRadius: 1 }}>
-                <Typography variant="body2" color="info.contrastText">
+                <Typography variant="body2" color="info.contrastText" sx={{ mb: 1 }}>
                   <strong>Note:</strong> All assets (Thumbnail, Icon, GIF, and HTML ZIP) are required for game upload.
+                </Typography>
+                <Typography variant="body2" color="warning.dark" sx={{ fontWeight: 500 }}>
+                  ⚠️ <strong>Important:</strong> Avoid special characters (&, (), [], {}, etc.) in ZIP filenames. Use simple names like "Game-Name.zip" for best compatibility.
                 </Typography>
               </Box>
 

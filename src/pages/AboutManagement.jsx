@@ -43,7 +43,9 @@ import axios from '../utils/axios'
 
 const AboutManagement = () => {
   const { enqueueSnackbar } = useSnackbar()
-  const [aboutData, setAboutData] = useState([])
+  const [aboutData, setAboutData] = useState([]) // About data from about-data.json
+  const [allGames, setAllGames] = useState([]) // ALL games from game-data.json
+  const [mergedData, setMergedData] = useState([]) // Merged: all games + about data
   const [loading, setLoading] = useState(true)
   const [openDialog, setOpenDialog] = useState(false)
   const [editingAbout, setEditingAbout] = useState(null)
@@ -83,13 +85,81 @@ const AboutManagement = () => {
   const fetchAboutData = async () => {
     try {
       setLoading(true)
-      const response = await axios.get(config.api.getFullUrl(config.api.endpoints.about.list), {
+      
+      // Fetch ALL games from game-data.json
+      const gamesResponse = await axios.get(config.api.getFullUrl(config.api.endpoints.games.list), {
+        withCredentials: true,
+        timeout: config.api.timeout
+      })
+      
+      // Fetch existing about data from about-data.json
+      const aboutResponse = await axios.get(config.api.getFullUrl(config.api.endpoints.about.list), {
         withCredentials: true,
         timeout: config.api.timeout
       })
 
-      if (response.data.success) {
-        setAboutData(response.data.data.games || [])
+      if (gamesResponse.data.success) {
+        // Handle different response formats
+        let games = []
+        if (Array.isArray(gamesResponse.data.data)) {
+          games = gamesResponse.data.data
+        } else if (gamesResponse.data.data && Array.isArray(gamesResponse.data.data.games)) {
+          games = gamesResponse.data.data.games
+        } else if (gamesResponse.data.data && typeof gamesResponse.data.data === 'object') {
+          // If data is an object with games array
+          games = Object.values(gamesResponse.data.data).filter(item => item && typeof item === 'object')
+        } else if (Array.isArray(gamesResponse.data)) {
+          games = gamesResponse.data
+        }
+        
+        console.log('📊 Games Response Structure:', {
+          success: gamesResponse.data.success,
+          dataType: typeof gamesResponse.data.data,
+          isArray: Array.isArray(gamesResponse.data.data),
+          gamesCount: games.length,
+          sampleGame: games[0]
+        })
+        
+        const aboutGames = aboutResponse.data.success ? (aboutResponse.data.data.games || []) : []
+        
+        setAllGames(games)
+        setAboutData(aboutGames)
+        
+        // Ensure games is an array before mapping
+        if (!Array.isArray(games) || games.length === 0) {
+          console.warn('⚠️ No games found or invalid format!')
+          setMergedData([])
+          enqueueSnackbar('No games found. Please add games first.', { variant: 'warning' })
+          return
+        }
+        
+        // Merge: For each game, check if it has about data
+        const merged = games.map(game => {
+          const aboutInfo = aboutGames.find(about => about.id === game.id)
+          if (aboutInfo) {
+            // Game has about data
+            return { ...aboutInfo, hasAboutData: true, game }
+          } else {
+            // Game doesn't have about data yet - create placeholder
+            return {
+              id: game.id,
+              title: game.name,
+              developer: '',
+              rating: 0,
+              votes: 0,
+              description: '',
+              logo: game.logo_url || game.thumb_url,
+              hidden: false,
+              sections: [],
+              categories: [],
+              hasAboutData: false,
+              game
+            }
+          }
+        })
+        
+        setMergedData(merged)
+        console.log(`✅ Loaded ${games.length} total games, ${aboutGames.length} have about data`)
       }
     } catch (error) {
       console.error('Error fetching about data:', error)
@@ -217,13 +287,18 @@ const AboutManagement = () => {
       }
 
       let response
-      if (editingAbout) {
+      // Check if we're editing existing about data OR creating new about data
+      if (editingAbout && editingAbout.hasAboutData) {
+        // UPDATING existing about data (game already has about data)
+        console.log('📝 Updating existing about data for:', editingAbout.id)
         response = await axios.put(
           config.api.getFullUrl(config.api.endpoints.about.update(editingAbout.id)),
           aboutInfoData,
           { withCredentials: true }
         )
       } else {
+        // CREATING new about data (game doesn't have about data yet)
+        console.log('🆕 Creating new about data for:', aboutInfoData.id)
         response = await axios.post(
           config.api.getFullUrl(config.api.endpoints.about.create),
           aboutInfoData,
@@ -232,13 +307,15 @@ const AboutManagement = () => {
       }
 
       if (response.data.success) {
-        enqueueSnackbar(`About information ${editingAbout ? 'updated' : 'created'} successfully!`, { variant: 'success' })
+        const isCreating = !editingAbout || !editingAbout.hasAboutData
+        enqueueSnackbar(`About information ${isCreating ? 'created' : 'updated'} successfully!`, { variant: 'success' })
         fetchAboutData()
         handleCloseDialog()
       }
     } catch (error) {
       console.error('Error saving about info:', error)
-      enqueueSnackbar(error.response?.data?.message || `Failed to ${editingAbout ? 'update' : 'create'} about information`, { variant: 'error' })
+      const isCreating = !editingAbout || !editingAbout.hasAboutData
+      enqueueSnackbar(error.response?.data?.message || `Failed to ${isCreating ? 'create' : 'update'} about information`, { variant: 'error' })
     } finally {
       setUploadingFile(false)
     }
@@ -442,10 +519,13 @@ const AboutManagement = () => {
           <Card elevation={2}>
             <CardContent>
               <Typography variant="body2" color="text.secondary" gutterBottom>
-                Total About Pages
+                Total Games
               </Typography>
               <Typography variant="h4" sx={{ fontWeight: 600 }}>
-                {aboutData.length}
+                {allGames.length}
+              </Typography>
+              <Typography variant="caption" color="primary.main">
+                {mergedData.filter(g => g.hasAboutData).length} with About data
               </Typography>
             </CardContent>
           </Card>
@@ -454,10 +534,13 @@ const AboutManagement = () => {
           <Card elevation={2}>
             <CardContent>
               <Typography variant="body2" color="text.secondary" gutterBottom>
-                Visible Pages
+                Missing About Data
               </Typography>
-              <Typography variant="h4" sx={{ fontWeight: 600 }}>
-                {aboutData.filter(a => !a.hidden).length}
+              <Typography variant="h4" sx={{ fontWeight: 600, color: 'warning.main' }}>
+                {mergedData.filter(g => !g.hasAboutData).length}
+              </Typography>
+              <Typography variant="caption" color="text.secondary">
+                Games need about data
               </Typography>
             </CardContent>
           </Card>
@@ -469,7 +552,7 @@ const AboutManagement = () => {
                 Hidden Pages
               </Typography>
               <Typography variant="h4" sx={{ fontWeight: 600 }}>
-                {aboutData.filter(a => a.hidden).length}
+                {mergedData.filter(a => a.hidden && a.hasAboutData).length}
               </Typography>
             </CardContent>
           </Card>
@@ -481,28 +564,36 @@ const AboutManagement = () => {
                 Total Sections
               </Typography>
               <Typography variant="h4" sx={{ fontWeight: 600 }}>
-                {aboutData.reduce((sum, a) => sum + (a.sections?.length || 0), 0)}
+                {mergedData.reduce((sum, a) => sum + (a.sections?.length || 0), 0)}
               </Typography>
             </CardContent>
           </Card>
         </Grid>
       </Grid>
 
-      {aboutData.length === 0 ? (
+      {mergedData.length === 0 ? (
         <Paper elevation={2} sx={{ p: 5, textAlign: 'center' }}>
           <InfoIcon sx={{ fontSize: 64, color: 'text.secondary', mb: 2 }} />
           <Typography variant="h6" gutterBottom>
-            No About Information Found
+            No Games Found
           </Typography>
           <Typography variant="body2" color="text.secondary" sx={{ mb: 3 }}>
-            Get started by adding about information for a game.
+            Please upload some games first from the Games Management section.
           </Typography>
         </Paper>
       ) : (
         <Grid container spacing={3}>
-          {aboutData.map((aboutInfo) => (
+          {mergedData.map((aboutInfo) => (
             <Grid item xs={12} key={aboutInfo.id}>
-              <Card elevation={2} sx={{ height: '100%' }}>
+              <Card 
+                elevation={2} 
+                sx={{ 
+                  height: '100%',
+                  border: aboutInfo.hasAboutData ? 'none' : '2px dashed',
+                  borderColor: 'warning.light',
+                  bgcolor: aboutInfo.hasAboutData ? 'background.paper' : 'warning.lighter'
+                }}
+              >
                 <CardContent>
                   <Box sx={{ display: 'flex', gap: 2 }}>
                     {aboutInfo.logo && (
@@ -582,32 +673,58 @@ const AboutManagement = () => {
                           )}
                         </Box>
                       )}
+                      
+                      {/* No About Data Warning */}
+                      {!aboutInfo.hasAboutData && (
+                        <Box sx={{ mt: 2, p: 2, bgcolor: 'warning.light', borderRadius: 1 }}>
+                          <Typography variant="body2" color="warning.dark" sx={{ fontWeight: 600 }}>
+                            ⚠️ No About Data Yet
+                          </Typography>
+                          <Typography variant="caption" color="text.secondary">
+                            Click "Add About" below to create about information for this game.
+                          </Typography>
+                        </Box>
+                      )}
                     </Box>
                   </Box>
                 </CardContent>
                 <CardActions sx={{ justifyContent: 'flex-end' }}>
-                  <Button
-                    size="small"
-                    startIcon={<EditIcon />}
-                    onClick={() => handleOpenDialog(aboutInfo)}
-                  >
-                    Edit
-                  </Button>
-                  <Button
-                    size="small"
-                    startIcon={aboutInfo.hidden ? <VisibilityIcon /> : <VisibilityOffIcon />}
-                    onClick={() => toggleHidden(aboutInfo)}
-                  >
-                    {aboutInfo.hidden ? 'Show' : 'Hide'}
-                  </Button>
-                  <Button
-                    size="small"
-                    color="error"
-                    startIcon={<DeleteIcon />}
-                    onClick={() => handleDeleteAbout(aboutInfo.id)}
-                  >
-                    Delete
-                  </Button>
+                  {aboutInfo.hasAboutData ? (
+                    <>
+                      <Button
+                        size="small"
+                        startIcon={<EditIcon />}
+                        onClick={() => handleOpenDialog(aboutInfo)}
+                      >
+                        Edit
+                      </Button>
+                      <Button
+                        size="small"
+                        startIcon={aboutInfo.hidden ? <VisibilityIcon /> : <VisibilityOffIcon />}
+                        onClick={() => toggleHidden(aboutInfo)}
+                      >
+                        {aboutInfo.hidden ? 'Show' : 'Hide'}
+                      </Button>
+                      <Button
+                        size="small"
+                        color="error"
+                        startIcon={<DeleteIcon />}
+                        onClick={() => handleDeleteAbout(aboutInfo.id)}
+                      >
+                        Delete
+                      </Button>
+                    </>
+                  ) : (
+                    <Button
+                      variant="contained"
+                      color="primary"
+                      size="small"
+                      startIcon={<AddIcon />}
+                      onClick={() => handleOpenDialog(aboutInfo)}
+                    >
+                      Add About Data
+                    </Button>
+                  )}
                 </CardActions>
               </Card>
             </Grid>
@@ -618,11 +735,25 @@ const AboutManagement = () => {
       {/* Add/Edit Dialog */}
       <Dialog open={openDialog} onClose={handleCloseDialog} maxWidth="md" fullWidth>
         <DialogTitle>
-          {editingAbout ? 'Edit About Information' : 'Add New About Information'}
+          {editingAbout ? (editingAbout.hasAboutData ? 'Edit About Information' : 'Add About Information') : 'Add New About Information'}
         </DialogTitle>
         <DialogContent>
           <Box sx={{ pt: 2 }}>
             <Grid container spacing={2}>
+              <Grid item xs={12}>
+                <TextField
+                  fullWidth
+                  label="Game ID"
+                  value={formData.id}
+                  onChange={(e) => setFormData({ ...formData, id: e.target.value })}
+                  required
+                  disabled={!!editingAbout}
+                  helperText={editingAbout ? `This About data will be linked to game "${editingAbout.game?.name || editingAbout.title}"` : "Enter the game ID to link this about data"}
+                  InputProps={{
+                    startAdornment: <InputAdornment position="start">🎮</InputAdornment>
+                  }}
+                />
+              </Grid>
               <Grid item xs={12}>
                 <TextField
                   fullWidth
