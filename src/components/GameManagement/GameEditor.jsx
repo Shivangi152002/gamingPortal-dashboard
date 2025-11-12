@@ -634,8 +634,11 @@ const GameEditor = () => {
               <Grid item xs={12} sm={6}>
                 <FileUploadZone
                   onDrop={handleFileUpload('gif')}
-                  accept={{ 'image/gif': ['.gif'] }}
-                  label="Update GIF"
+                  accept={{ 
+                    'image/gif': ['.gif'],
+                    'video/webm': ['.webm']
+                  }}
+                  label="Update GIF/WebM"
                   icon={<ImageIcon sx={{ fontSize: 32, color: 'warning.main' }} />}
                   file={newFiles.gif}
                   isUploading={uploadingFiles}

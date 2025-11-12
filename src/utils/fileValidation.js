@@ -82,22 +82,23 @@ export const fileValidation = {
     }
   },
 
-  // Validate GIF file
+  // Validate GIF/WebM file
   validateGif: (file) => {
     const errors = []
+    const allowedTypes = ['image/gif', 'video/webm']
 
     if (!file) {
-      return { valid: true, errors } // GIF is optional
+      return { valid: true, errors } // GIF/WebM is optional
     }
 
-    // Check file type
-    if (file.type !== 'image/gif') {
-      errors.push('Preview must be a GIF file')
+    // Check file type - allow both GIF and WebM
+    if (!allowedTypes.includes(file.type)) {
+      errors.push('Preview must be a GIF or WebM file')
     }
 
-    // Check file size (10MB max for GIF)
-    if (file.size > 10485760) {
-      errors.push('GIF size must be less than 10MB')
+    // Check file size (20MB max for GIF/WebM - increased for video)
+    if (file.size > 20971520) {
+      errors.push('File size must be less than 20MB')
     }
 
     return {

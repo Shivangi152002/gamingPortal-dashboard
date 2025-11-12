@@ -395,8 +395,11 @@ const GameUpload = () => {
                 <Grid item xs={12} md={6}>
                   <FileUploadZone
                     onDrop={handleFileUpload('gif')}
-                    accept={{ 'image/gif': ['.gif'] }}
-                    label="Upload GIF *"
+                    accept={{ 
+                      'image/gif': ['.gif'],
+                      'video/webm': ['.webm']
+                    }}
+                    label="Upload GIF/WebM *"
                     icon={<ImageIcon sx={{ fontSize: 48, color: 'warning.main' }} />}
                     file={files.gif}
                     error={errors.gif}
